@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V8</title>
+<title>물표 관리 V9</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -27,6 +27,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 .cd{background:#fff;border:1px solid var(--ln);border-left:6px solid var(--ln);border-radius:8px;padding:10px 12px;display:grid;gap:2px;user-select:none;-webkit-user-select:none}
 .cd.a{border-left-color:var(--a)}.cd.b{border-left-color:var(--b)}.cd.c{border-left-color:var(--c)}
 .r1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.route{font-size:14px;font-weight:400;color:var(--mu);white-space:nowrap}
 .m{color:var(--mu);font-size:14px;display:flex;flex-wrap:wrap;gap:0 12px}
 .info{background:#fff;border:1px solid var(--ln);border-radius:8px;padding:8px 12px;font-size:14px;display:grid;gap:1px}
 .info b{font-size:17px}
@@ -63,7 +64,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 <body><div id="app"></div><div id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* V8 - V7 기능 유지 + 출발/도착 줄을 기존 .tm 글씨 크기/타입으로 표시 */
+/* V9 - 터미널 정보를 첫 줄에 별도 스타일로 표시하고 출발/도착은 기존 형태 유지 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -152,8 +153,8 @@ function draw(){
  const cur=r.slice((pg-1)*PAGE,pg*PAGE);
  ls.innerHTML=cur.map(d=>{
   const rc=name(d.received_by)||d.received_other,ex=name(d.expected_receiver)||d.expected_other;
-  return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><span><span class="no">${d.display_no}</span><b>${esc(d.receipt_no)}</b></span><span class="bd ${CL[d.status]}">${d.status}</span></div>
-<div class="tm">[${esc(d.departure_terminal)} → ${esc(d.arrival_terminal)}] 출발 ${md(d.departure_date)} ${esc(d.departure_time)}${d.bus_company?`(${esc(bus(d.bus_company))})`:''}　도착 ${esc(d.arrival_time)}</div>
+  return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><span><span class="no">${d.display_no}</span><b>${esc(d.receipt_no)}</b><span class="route"> [${esc(d.departure_terminal)} &gt; ${esc(d.arrival_terminal)}]</span></span><span class="bd ${CL[d.status]}">${d.status}</span></div>
+<div class="tm">출발 ${md(d.departure_date)} ${esc(d.departure_time)}${d.bus_company?`(${esc(bus(d.bus_company))})`:''}　도착 ${esc(d.arrival_time)}</div>
 <div class="m"><span>수취인 ${esc(d.recipient)}</span><span>등록 ${esc(name(d.registered_by))}</span><span>사진 ${d.delivery_photos?.[0]?.count||0}장</span></div>
 ${d.status==='수령완료'&&rc?`<div class="m"><span>수령자 ${esc(rc)}</span></div>`:ex?`<div class="ex">수령예정 ${esc(ex)} ${fmt(d.expected_at)}</div>`:''}</div>`;
  }).join('')||'<p class="m">표시할 배송이 없습니다.</p>';
