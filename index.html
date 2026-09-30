@@ -177,30 +177,11 @@ function newForm(){
 <div class="bar"><button class="p" id="sv">저장</button></div>`;
  back();
  let parseCheckSeq=0;
- $('#raw').oninput=async e=>{
-  const seq=++parseCheckSeq;
+ $('#raw').oninput=e=>{
   const t=e.target.value,o=parse(t),pv=$('#pv');
   if(!t.trim()){pv.textContent='';return}
   if(!o.receipt_no){pv.textContent='접수번호를 찾지 못했습니다. 안내문 전체를 붙여넣었는지 확인하세요.';return}
-
-  const base=`인식: 접수번호 ${o.receipt_no}, ${o.departure_terminal} → ${o.arrival_terminal}, 수취인 ${o.recipient}`;
-  pv.textContent=base;
-
-  const{data,error}=await sb.from('deliveries')
-    .select('id')
-    .eq('receipt_no',o.receipt_no)
-    .is('deleted_at',null);
-
-  // 붙여넣기 과정에서 여러 input 이벤트가 발생해도
-  // 가장 최근 입력 결과만 화면에 반영합니다.
-  if(seq!==parseCheckSeq)return;
-
-  if(error){
-    console.error('[중복 확인 실패]',error);
-    return;
-  }
-
-  pv.textContent=base+(data?.length?' (이미 등록된 접수번호입니다)':'');
+  pv.textContent=`인식: 접수번호 ${o.receipt_no}, ${o.departure_terminal} → ${o.arrival_terminal}, 수취인 ${o.recipient}`;
  };
  $('#sv').onclick=async()=>{
   const raw=$('#raw').value,o=parse(raw),rb=$('#rb').value;
@@ -208,7 +189,8 @@ function newForm(){
   if(!rb)return toast('등록자 이름을 선택하세요.');
   for(const k in o)o[k]=o[k]||null;
   const btn=$('#sv');btn.disabled=true;
-  const{data:dup}=await sb.from('deliveries').select('id').eq('receipt_no',o.receipt_no).is('deleted_at',null);
+  const{data:dup,error:dupError}=await sb.from('deliveries').select('id').eq('receipt_no',o.receipt_no).is('deleted_at',null);
+  if(dupError){btn.disabled=false;return toast('중복 확인 실패: '+dupError.message)}
   if(dup?.length){btn.disabled=false;return toast('이미 등록된 접수번호입니다.')}
   const{error}=await sb.from('deliveries').insert({...o,raw_text:raw,registered_by:rb,updated_by:rb,note:$('#nt').value.trim()||null});
   if(error){btn.disabled=false;return toast(error.code==='23505'?'이미 등록된 접수번호입니다.':'저장 실패: '+error.message)}
