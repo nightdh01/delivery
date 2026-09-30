@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V10</title>
+<title>물표 관리 V11</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -66,6 +66,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 <script>
 /* V9 - 터미널 정보를 첫 줄에 별도 스타일로 표시하고 출발/도착은 기존 형태 유지 */
 /* V10 - 배송 삭제 시 Storage에 올라간 사진 파일도 함께 삭제 */
+/* V11 - 배송 삭제 시 해당 배송 폴더 안에 남은 파일까지 모두 삭제(폴더 자동 정리) */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -259,26 +260,35 @@ function detail(d){
   const btn=$('#dl');btn.disabled=true;
   const fail=m=>{btn.disabled=false;toast(m)};
 
-  // 1) 이 배송에 등록된 사진 목록 확인
+  // 1) DB에 등록된 사진 목록
   const{data:ph,error:e1}=await sb.from('delivery_photos').select('id,file_path').eq('delivery_id',d.id);
   if(e1){console.error('[배송 삭제] 사진 목록 조회 실패',e1);return fail('사진 정보 확인 실패: '+e1.message)}
+  const paths=ph.map(p=>p.file_path);
 
-  if(ph.length){
-   // 2) Storage의 사진 파일을 먼저 삭제 (실패하면 배송은 삭제하지 않고 중단)
-   const paths=ph.map(p=>p.file_path);
-   const{data:rm,error:e2}=await sb.storage.from('photos').remove(paths);
-   if(e2){console.error('[배송 삭제] Storage 삭제 실패',{paths,error:e2});return fail('사진 파일 삭제 실패: '+e2.message)}
-   if((rm||[]).length<paths.length)console.warn('[배송 삭제] 일부 사진 파일이 Storage에 없었습니다',{paths,removed:rm});
+  // 2) 이 배송 폴더에 실제로 남아 있는 파일도 모두 확인 (DB에 없는 파일, 빈 폴더 표시 파일 포함)
+  const{data:left,error:e2}=await sb.storage.from('photos').list(d.id,{limit:1000});
+  if(e2){console.error('[배송 삭제] 폴더 조회 실패',e2);return fail('사진 폴더 확인 실패: '+e2.message)}
+  (left||[]).forEach(f=>{const p=d.id+'/'+f.name;if(f.name&&!paths.includes(p))paths.push(p)});
 
-   // 3) 사진 DB 정보 삭제
-   const{error:e3}=await sb.from('delivery_photos').delete().eq('delivery_id',d.id);
-   if(e3){console.error('[배송 삭제] 사진 DB 정보 삭제 실패',e3);return fail('사진 정보 삭제 실패: '+e3.message)}
+  // 3) Storage 파일 삭제 (실패하면 배송은 삭제하지 않고 중단)
+  let n=0;
+  if(paths.length){
+   const{data:rm,error:e3}=await sb.storage.from('photos').remove(paths);
+   if(e3){console.error('[배송 삭제] Storage 삭제 실패',{paths,error:e3});return fail('사진 파일 삭제 실패: '+e3.message)}
+   n=(rm||[]).length;
+   if(n<paths.length)console.warn('[배송 삭제] 삭제되지 않은 파일이 있습니다',{paths,removed:rm});
   }
 
-  // 4) 배송을 목록에서 삭제(숨김 처리)
+  // 4) 사진 DB 정보 삭제
+  if(ph.length){
+   const{error:e4}=await sb.from('delivery_photos').delete().eq('delivery_id',d.id);
+   if(e4){console.error('[배송 삭제] 사진 DB 정보 삭제 실패',e4);return fail('사진 정보 삭제 실패: '+e4.message)}
+  }
+
+  // 5) 배송을 목록에서 삭제(숨김 처리)
   const{error}=await sb.from('deliveries').update({deleted_at:new Date().toISOString()}).eq('id',d.id);
   if(error)return fail(error.message);
-  toast('삭제했습니다.');toHome();
+  toast(n?`삭제했습니다. (사진 ${n}장 정리)`:'삭제했습니다.');toHome();
  };
 }
 
