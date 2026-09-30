@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리</title>
+<title>물표 관리 V5</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -63,6 +63,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 <body><div id="app"></div><div id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* V5 - 사진 삭제 시 Supabase Storage 삭제 결과를 확인한 뒤 DB 레코드를 삭제합니다. */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -254,9 +255,43 @@ async function photos(d){
  el.onclick=async e=>{
   if(e.target.dataset.add)return $('#fi').click();
   if(e.target.dataset.z)return window.open(e.target.src);
-  const s=e.target.dataset.x;if(!s)return;if(!confirm('이 사진을 삭제할까요?'))return;
-  await sb.storage.from('photos').remove([PH[s].file_path]);
-  await sb.from('delivery_photos').delete().eq('id',PH[s].id);photos(d);
+  const s=e.target.dataset.x;
+  if(!s)return;
+  if(!confirm('이 사진을 삭제할까요?'))return;
+
+  const path=PH[s].file_path;
+
+  // V5: Storage 파일을 먼저 삭제하고, 성공한 경우에만 DB 정보를 삭제합니다.
+  const {data:storageData,error:storageError} =
+    await sb.storage.from('photos').remove([path]);
+
+  if(storageError){
+    console.error('[사진 삭제] Storage 삭제 실패', {
+      path,
+      error: storageError
+    });
+    return toast('사진 파일 삭제 실패: ' + storageError.message);
+  }
+
+  console.log('[사진 삭제] Storage 삭제 성공', {
+    path,
+    data: storageData
+  });
+
+  const {error:dbError} =
+    await sb.from('delivery_photos').delete().eq('id',PH[s].id);
+
+  if(dbError){
+    console.error('[사진 삭제] DB 정보 삭제 실패', {
+      id: PH[s].id,
+      path,
+      error: dbError
+    });
+    return toast('사진 정보 삭제 실패: ' + dbError.message);
+  }
+
+  toast('사진을 삭제했습니다.');
+  photos(d);
  };
  $('#fi').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)upMany(d,fs)};
 }
