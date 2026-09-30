@@ -7,40 +7,49 @@
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+#app{min-height:100dvh;display:flex;flex-direction:column}
 header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
 header b{flex:1;font-size:18px}
-header select{width:auto;max-width:38vw;padding:6px}
-.w{max-width:640px;margin:0 auto;padding:12px;display:grid;gap:10px}
-.box{max-width:340px;margin:18vh auto 0;padding:20px;display:grid;gap:12px}
+.w{width:100%;max-width:640px;margin:0 auto;padding:10px 12px;display:grid;gap:8px;flex:1;align-content:start}
+.box{width:100%;max-width:340px;margin:18vh auto 0;padding:20px;display:grid;gap:12px}
 h1{margin:0;font-size:26px}
-label{display:grid;gap:4px;font-size:14px;color:var(--mu)}
-input,select,textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--ln);border-radius:8px;padding:11px}
+label{display:grid;gap:4px;font-size:14px;color:var(--mu);min-width:0}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--ln);border-radius:8px;padding:10px}
 button{font:inherit;min-height:44px;border:1px solid var(--ln);border-radius:8px;background:#fff;color:var(--ink);padding:0 14px}
 .p{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700}
 .s{background:transparent}
 header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 .bk{background:transparent;color:#fff;border:0;font-size:28px;padding:0 6px;min-height:36px}
 .dg{color:#B3261E;border-color:#B3261E}
-.sec{display:grid;gap:10px;background:#fff;border:1px solid var(--ln);border-radius:8px;padding:12px}
+.bar{position:sticky;bottom:0;z-index:5;width:100%;max-width:640px;margin:auto auto 0;display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--ln)}
+.bar .p{flex:1}
 .cd{background:#fff;border:1px solid var(--ln);border-left:6px solid var(--ln);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
 .cd.a{border-left-color:var(--a)}.cd.b{border-left-color:var(--b)}.cd.c{border-left-color:var(--c)}
 .r1{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .m{color:var(--mu);font-size:14px;display:flex;flex-wrap:wrap;gap:0 12px}
+.info{background:#fff;border:1px solid var(--ln);border-radius:8px;padding:8px 12px;font-size:14px;display:grid;gap:1px}
+.info b{font-size:17px}
+.info div{display:flex;flex-wrap:wrap;gap:0 12px}
+.info i{font-style:normal;color:var(--mu);margin-right:4px}
+.info a{color:var(--b)}
 .bd{font-size:13px;font-weight:700;padding:2px 10px;border-radius:99px}
 .bd.a{background:#FFF1D6;color:var(--a)}.bd.b{background:#E1EBFF;color:var(--b)}.bd.c{background:#DDF3E7;color:var(--c)}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
-.ch{border-radius:99px;min-height:40px}
+#sts .ch{flex:1}
+.ch{border-radius:99px;min-height:40px;padding:0 12px}
 .ch.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ch.a.on{background:var(--a);border-color:var(--a)}.ch.b.on{background:var(--b);border-color:var(--b)}.ch.c.on{background:var(--c);border-color:var(--c)}
 .row{display:flex;gap:8px}
-.ph{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.g2 label{gap:4px}
+.ph{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .sl{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden}
 .sl img{width:100%;height:100%;object-fit:cover}
-.sl.e{display:grid;place-items:center;border:2px dashed var(--ln);font-size:28px;color:var(--mu)}
-.x{position:absolute;top:4px;right:4px;min-height:32px;width:32px;padding:0;border-radius:99px;background:#000a;color:#fff;border:0}
+.sl.e{display:grid;place-items:center;min-height:0;padding:0;border:2px dashed var(--ln);font-size:24px;color:var(--mu);background:transparent}
+.x{position:absolute;top:2px;right:2px;min-height:24px;width:24px;padding:0;border-radius:99px;background:#000a;color:#fff;border:0;font-size:12px}
 .err{color:#B3261E;margin:0}
-#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:9}
 #toast.on{opacity:1}
 </style></head>
 <body><div id="app"></div><div id="toast"></div>
@@ -53,15 +62,18 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ST=['수령예정','수령중','수령완료'],CL={수령예정:'a',수령중:'b',수령완료:'c'};
-const F=[['receipt_no','접수번호'],['sender','발송인'],['recipient','수취인 (카톡 원문)'],['item_name','품목명'],['departure_terminal','발송터미널'],['departure_date','출발일자','date'],['departure_time','출발시간'],['bus_company','버스회사'],['arrival_terminal','도착터미널'],['arrival_time','도착예정시간'],['arrival_contact','도착문의'],['contact','연락처'],['vehicle_no','차량번호']];
-let MA=[],M=[],me=localStorage.getItem('me')||'',list=[],flt='전체',q='',view='',ch=null;
+let MA=[],M=[],list=[],flt='전체',q='',view='',ch=null,PH={};
 const name=id=>MA.find(m=>m.id===id)?.name||'';
 const opts=(sel,ph='선택 안 함')=>`<option value="">${ph}</option>`+M.map(m=>`<option value="${m.id}"${m.id===sel?' selected':''}>${esc(m.name)}</option>`).join('');
 const fmt=t=>t?new Date(t).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
 const loc=t=>{if(!t)return'';const d=new Date(t),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
-const toast=t=>{const e=$('#toast');e.textContent=t;e.className='on';clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='',2500)};
-const need=()=>toast('처음 화면 위쪽에서 "나" 이름을 먼저 선택하세요.');
-const back=()=>{const b=$('#bk');if(b)b.onclick=home};
+const toast=t=>{const e=$('#toast');e.textContent=t;e.className='on';clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='',2600)};
+
+/* 뒤로가기: 등록/상세/이름관리 화면에서 폰의 뒤로가기를 누르면 목록으로 돌아감 */
+const sub=()=>history.pushState({v:'sub'},'');
+const toHome=()=>history.state&&history.state.v==='sub'?history.back():home();
+const back=()=>{const b=$('#bk');if(b)b.onclick=toHome};
+addEventListener('popstate',()=>{if(view==='form'||view==='m')home()});
 
 /* 카톡 안내문 자동 추출 */
 function parse(t){
@@ -94,6 +106,7 @@ async function loadM(){
 }
 async function start(){
  const{data:{session}}=await sb.auth.getSession();if(!session)return login();
+ history.replaceState({v:'list'},'');
  await loadM();await home();
  if(!ch)ch=sb.channel('d').on('postgres_changes',{event:'*',schema:'public',table:'deliveries'},()=>{if(view==='list')load()}).subscribe();
 }
@@ -101,14 +114,12 @@ async function start(){
 /* 목록 */
 async function home(){
  view='list';
- if(!M.some(m=>m.id===me))me='';
- app.innerHTML=`<header><b>물표</b><label style="flex-direction:row;color:#fff;align-items:center">나&nbsp;<select id="me">${opts(me,'이름 선택')}</select></label><button class="s" id="mm">이름관리</button></header>
+ app.innerHTML=`<header><b>물표</b><button class="s" id="mm">이름관리</button></header>
 <div class="w"><div id="warn" class="m"></div><button class="p" id="nw">＋ 배송 등록</button>
 <input id="q" placeholder="접수번호, 이름 검색" value="${esc(q)}">
 <div class="chips" id="fl">${['전체',...ST].map(s=>`<button class="ch${s===flt?' on':''}" data-s="${s}">${s}</button>`).join('')}</div>
 <div id="ls" style="display:grid;gap:8px">불러오는 중…</div><button class="s" id="bu">백업 받기 (CSV)</button></div>`;
- $('#me').onchange=e=>{me=e.target.value;localStorage.setItem('me',me)};
- $('#mm').onclick=members;$('#nw').onclick=()=>form(null);$('#bu').onclick=backup;
+ $('#mm').onclick=members;$('#nw').onclick=newForm;$('#bu').onclick=backup;
  $('#q').oninput=e=>{q=e.target.value;draw()};
  $('#fl').onclick=e=>{const s=e.target.dataset.s;if(!s)return;flt=s;[...$('#fl').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));draw()};
  $('#ls').onclick=e=>{const c=e.target.closest('.cd');if(c)openD(c.dataset.id)};
@@ -134,85 +145,101 @@ function draw(){
  $('#warn').textContent=!M.length?'먼저 "이름관리"에서 사무소 사람들의 이름을 추가하세요.':old?`등록 후 1년이 지난 자료가 ${old}건 있습니다. 아래 백업 받기로 저장해 두세요.`:'';
 }
 
-/* 등록 / 상세 */
-async function openD(id){
- const{data,error}=await sb.from('deliveries').select('*').eq('id',id).single();
- if(error)return toast(error.message);form(data);
-}
-const fld=(k,l,t,v)=>`<label>${l}<input name="${k}" type="${t||'text'}" value="${esc(v)}"></label>`;
-const val=k=>document.querySelector(`[name="${k}"]`).value.trim()||null;
-function form(d){
- view='form';const n=!d;
- app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>${n?'배송 등록':'배송 상세'}</b></header><div class="w">
-${n?`<label>카톡 안내문 붙여넣기<textarea id="raw" rows="6" placeholder="[고속버스택배 접수안내] 전체를 붙여넣으면 아래 칸이 자동으로 채워집니다."></textarea></label>`
-:`<div class="m"><span>등록 ${esc(name(d.registered_by))} ${fmt(d.registered_at)}</span><span>최근 수정 ${esc(name(d.updated_by))} ${fmt(d.updated_at)}</span></div>
-<div class="sec"><b>수령 상태</b><div class="chips" id="sts">${ST.map(s=>`<button class="ch ${CL[s]}${d.status===s?' on':''}" data-s="${s}">${s}</button>`).join('')}</div></div>`}
-<div class="sec">${F.map(([k,l,t])=>fld(k,l,t,d?d[k]:'')).join('')}</div>
-${n?`<label>등록자<select id="rb">${opts(me,'이름 선택')}</select></label>`
-:`<div class="sec"><label>수령예정자<select id="eb">${opts(d.expected_receiver)}</select></label><label>수령예정자 직접 입력<input id="eo" value="${esc(d.expected_other)}"></label><label>수령예정시간<input id="ea" type="datetime-local" value="${loc(d.expected_at)}"></label>
-<label>실제 수령자<select id="rc">${opts(d.received_by)}</select></label><label>실제 수령자 직접 입력<input id="ro" value="${esc(d.received_other)}"></label>${d.received_at?`<div class="m">수령시간 ${fmt(d.received_at)}</div>`:''}</div>`}
-<label>기타사항<textarea id="nt" rows="3">${esc(d?.note)}</textarea></label>
-${n?'':`<div class="sec"><b>사진 (최대 5장)</b><div id="ph" class="ph"></div></div>`}
-<button class="p" id="sv">저장</button>${n?'':'<button class="s dg" id="dl">삭제</button>'}</div>`;
+/* 배송 등록: 카톡 안내문 + 등록자 + 기타사항만 */
+function newForm(){
+ view='form';sub();
+ app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>배송 등록</b></header>
+<div class="w"><label>카톡 안내문 붙여넣기<textarea id="raw" rows="9" placeholder="[고속버스택배 접수안내] 전체를 붙여넣으세요."></textarea></label>
+<div id="pv" class="m"></div>
+<label>등록자<select id="rb">${opts('','이름 선택')}</select></label>
+<label>기타사항<textarea id="nt" rows="2"></textarea></label></div>
+<div class="bar"><button class="p" id="sv">저장</button></div>`;
  back();
- if(n){
-  $('#raw').oninput=async e=>{
-   const o=parse(e.target.value);if(!o.receipt_no)return;
-   F.forEach(([k])=>{document.querySelector(`[name="${k}"]`).value=o[k]||''});
-   const{data}=await sb.from('deliveries').select('id').eq('receipt_no',o.receipt_no).is('deleted_at',null);
-   if(data?.length)toast('이미 등록된 접수번호입니다.');
-  };
- }else{
-  photos(d);
-  $('#sts').onclick=async e=>{
-   const s=e.target.dataset.s;if(!s)return;if(!me)return need();
-   const at=s==='수령완료'?(d.received_at||new Date().toISOString()):null;
-   const{error}=await sb.from('deliveries').update({status:s,received_at:at,updated_by:me}).eq('id',d.id);
-   if(error)return toast(error.message);
-   d.status=s;d.received_at=at;
-   [...$('#sts').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));toast('상태: '+s);
-  };
-  $('#dl').onclick=async()=>{
-   if(!me)return need();if(!confirm('이 배송을 목록에서 삭제할까요?'))return;
-   const{error}=await sb.from('deliveries').update({deleted_at:new Date().toISOString(),updated_by:me}).eq('id',d.id);
-   if(error)return toast(error.message);toast('삭제했습니다.');home();
-  };
- }
+ $('#raw').oninput=async e=>{
+  const t=e.target.value,o=parse(t),pv=$('#pv');
+  if(!t.trim()){pv.textContent='';return}
+  if(!o.receipt_no){pv.textContent='접수번호를 찾지 못했습니다. 안내문 전체를 붙여넣었는지 확인하세요.';return}
+  pv.textContent=`인식: 접수번호 ${o.receipt_no}, ${o.departure_terminal} → ${o.arrival_terminal}, 수취인 ${o.recipient}`;
+  const{data}=await sb.from('deliveries').select('id').eq('receipt_no',o.receipt_no).is('deleted_at',null);
+  if(data?.length)pv.textContent+=' (이미 등록된 접수번호입니다)';
+ };
  $('#sv').onclick=async()=>{
-  const p={};F.forEach(([k])=>p[k]=val(k));p.note=$('#nt').value.trim()||null;
-  if(!p.receipt_no)return toast('접수번호를 입력하세요.');
-  let r;
-  if(n){
-   const rb=$('#rb').value;if(!rb)return toast('등록자 이름을 선택하세요.');
-   Object.assign(p,{registered_by:rb,updated_by:rb,raw_text:$('#raw').value||null});
-   r=await sb.from('deliveries').insert(p);
-  }else{
-   if(!me)return need();
-   Object.assign(p,{expected_receiver:$('#eb').value||null,expected_other:$('#eo').value.trim()||null,expected_at:$('#ea').value?new Date($('#ea').value).toISOString():null,received_by:$('#rc').value||null,received_other:$('#ro').value.trim()||null,updated_by:me});
-   r=await sb.from('deliveries').update(p).eq('id',d.id);
-  }
-  if(r.error)return toast(r.error.code==='23505'?'이미 등록된 접수번호입니다.':'저장 실패: '+r.error.message);
-  toast(n?'등록했습니다.':'저장했습니다.');home();
+  const raw=$('#raw').value,o=parse(raw),rb=$('#rb').value;
+  if(!o.receipt_no)return toast('접수번호를 찾지 못했습니다. 안내문을 다시 붙여넣어 주세요.');
+  if(!rb)return toast('등록자 이름을 선택하세요.');
+  for(const k in o)o[k]=o[k]||null;
+  const btn=$('#sv');btn.disabled=true;
+  const{error}=await sb.from('deliveries').insert({...o,raw_text:raw,registered_by:rb,updated_by:rb,note:$('#nt').value.trim()||null});
+  if(error){btn.disabled=false;return toast(error.code==='23505'?'이미 등록된 접수번호입니다.':'저장 실패: '+error.message)}
+  toast('등록했습니다.');toHome();
  };
 }
 
-/* 사진 5칸 */
+/* 배송 상세 */
+async function openD(id){
+ const{data,error}=await sb.from('deliveries').select('*').eq('id',id).single();
+ if(error)return toast(error.message);detail(data);
+}
+const rsel=(id,mid,oth)=>{const o=oth&&!mid;return`<select id="${id}">${opts(mid)}<option value="__o"${o?' selected':''}>직접 입력…</option></select><input id="${id}o" value="${esc(oth)}" placeholder="이름 입력" style="${o?'':'display:none'}">`};
+const rv=id=>{const v=$('#'+id).value;return v==='__o'?[null,$('#'+id+'o').value.trim()||null]:[v||null,null]};
+function detail(d){
+ view='form';sub();
+ const dt=x=>x?x.slice(5):'';
+ app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>배송 상세</b></header>
+<div class="w"><div class="info"><b>${esc(d.receipt_no)}</b>
+<div>${esc(d.departure_terminal)} → ${esc(d.arrival_terminal)}</div>
+<div><span><i>발송인</i>${esc(d.sender)}</span><span><i>수취인</i>${esc(d.recipient)}</span><span><i>품목</i>${esc(d.item_name)}</span></div>
+<div><span><i>출발</i>${dt(d.departure_date)} ${esc(d.departure_time)}${d.bus_company?` (${esc(d.bus_company)})`:''}</span><span><i>도착예정</i>${esc(d.arrival_time)}</span></div>
+<div><span><i>문의</i>${esc(d.arrival_contact)}</span><span><i>연락처</i><a href="tel:${esc(d.contact)}">${esc(d.contact)}</a></span>${d.vehicle_no?`<span><i>차량</i>${esc(d.vehicle_no)}</span>`:''}</div>
+<div class="m"><span>등록 ${esc(name(d.registered_by))} ${fmt(d.registered_at)}</span></div></div>
+<div class="chips" id="sts">${ST.map(s=>`<button class="ch ${CL[s]}${d.status===s?' on':''}" data-s="${s}">${s}</button>`).join('')}</div>
+<div class="g2"><label>수령예정자${rsel('eb',d.expected_receiver,d.expected_other)}</label><label>실제 수령자${rsel('rc',d.received_by,d.received_other)}</label></div>
+<label>수령예정시간<input id="ea" type="datetime-local" value="${loc(d.expected_at)}"></label>
+<label>기타사항<textarea id="nt" rows="2">${esc(d.note)}</textarea></label>
+<div class="m" id="pt"></div><div id="ph" class="ph"></div><input type="file" id="fi" accept="image/*" multiple hidden></div>
+<div class="bar"><button class="p" id="sv">저장</button><button class="s dg" id="dl">삭제</button></div>`;
+ back();photos(d);
+ ['eb','rc'].forEach(id=>$('#'+id).onchange=e=>{$('#'+id+'o').style.display=e.target.value==='__o'?'':'none'});
+ $('#sts').onclick=async e=>{
+  const s=e.target.dataset.s;if(!s)return;
+  const at=s==='수령완료'?(d.received_at||new Date().toISOString()):null;
+  const{error}=await sb.from('deliveries').update({status:s,received_at:at}).eq('id',d.id);
+  if(error)return toast(error.message);
+  d.status=s;d.received_at=at;
+  [...$('#sts').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));toast('상태: '+s);
+ };
+ $('#sv').onclick=async()=>{
+  const[eb,eo]=rv('eb'),[rc,ro]=rv('rc');
+  const{error}=await sb.from('deliveries').update({expected_receiver:eb,expected_other:eo,expected_at:$('#ea').value?new Date($('#ea').value).toISOString():null,received_by:rc,received_other:ro,note:$('#nt').value.trim()||null}).eq('id',d.id);
+  if(error)return toast('저장 실패: '+error.message);
+  toast('저장했습니다.');toHome();
+ };
+ $('#dl').onclick=async()=>{
+  if(!confirm('이 배송을 목록에서 삭제할까요?'))return;
+  const{error}=await sb.from('deliveries').update({deleted_at:new Date().toISOString()}).eq('id',d.id);
+  if(error)return toast(error.message);toast('삭제했습니다.');toHome();
+ };
+}
+
+/* 사진 5칸 (여러 장 한 번에 선택 가능) */
 async function photos(d){
  const{data}=await sb.from('delivery_photos').select('*').eq('delivery_id',d.id);
- const P={},U={};(data||[]).forEach(p=>P[p.slot]=p);
- const ps=(data||[]).map(p=>p.file_path);
+ PH={};(data||[]).forEach(p=>PH[p.slot]=p);
+ const ps=(data||[]).map(p=>p.file_path),U={};
  if(ps.length)((await sb.storage.from('photos').createSignedUrls(ps,3600)).data||[]).forEach(x=>U[x.path]=x.signedUrl);
  const el=$('#ph');if(!el)return;
- el.innerHTML=[1,2,3,4,5].map(s=>{const p=P[s];return p
+ $('#pt').textContent=`사진 ${ps.length}/5 (빈 칸을 누르면 여러 장 선택 가능)`;
+ el.innerHTML=[1,2,3,4,5].map(s=>{const p=PH[s];return p
   ?`<div class="sl"><img src="${U[p.file_path]||''}" data-z="1" alt="사진 ${s}"><button class="x" data-x="${s}">✕</button></div>`
-  :`<label class="sl e">＋<input type="file" accept="image/*" data-u="${s}" hidden></label>`}).join('');
+  :`<button class="sl e" data-add="1">＋</button>`}).join('');
  el.onclick=async e=>{
+  if(e.target.dataset.add)return $('#fi').click();
   if(e.target.dataset.z)return window.open(e.target.src);
   const s=e.target.dataset.x;if(!s)return;if(!confirm('이 사진을 삭제할까요?'))return;
-  await sb.storage.from('photos').remove([P[s].file_path]);
-  await sb.from('delivery_photos').delete().eq('id',P[s].id);photos(d);
+  await sb.storage.from('photos').remove([PH[s].file_path]);
+  await sb.from('delivery_photos').delete().eq('id',PH[s].id);photos(d);
  };
- el.onchange=e=>{const s=e.target.dataset.u;if(s&&e.target.files[0])up(d,+s,e.target.files[0])};
+ $('#fi').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)upMany(d,fs)};
 }
 async function shrink(f){
  const im=await createImageBitmap(f,{imageOrientation:'from-image'});
@@ -221,20 +248,25 @@ async function shrink(f){
  c.getContext('2d').drawImage(im,0,0,c.width,c.height);
  return new Promise(r=>c.toBlob(r,'image/jpeg',.78));
 }
-async function up(d,s,f){
- if(!me)return need();toast('사진 올리는 중…');
- try{
-  const b=await shrink(f),path=`${d.id}/${s}-${Date.now()}.jpg`;
-  let r=await sb.storage.from('photos').upload(path,b,{contentType:'image/jpeg'});if(r.error)throw r.error;
-  r=await sb.from('delivery_photos').insert({delivery_id:d.id,slot:s,file_path:path,uploaded_by:me});
-  if(r.error){await sb.storage.from('photos').remove([path]);throw r.error}
-  toast('사진을 올렸습니다.');photos(d);
- }catch(e){toast('사진 업로드 실패: '+e.message)}
+async function up1(d,s,f){
+ const b=await shrink(f),path=`${d.id}/${s}-${Date.now()}.jpg`;
+ let r=await sb.storage.from('photos').upload(path,b,{contentType:'image/jpeg'});if(r.error)throw r.error;
+ r=await sb.from('delivery_photos').insert({delivery_id:d.id,slot:s,file_path:path});
+ if(r.error){await sb.storage.from('photos').remove([path]);throw r.error}
+}
+async function upMany(d,fs){
+ const free=[1,2,3,4,5].filter(s=>!PH[s]);
+ if(!free.length)return toast('사진은 5장까지 올릴 수 있습니다.');
+ const use=fs.slice(0,free.length);let ok=0,fail=0;
+ toast(`사진 ${use.length}장 올리는 중…`);
+ for(let i=0;i<use.length;i++){try{await up1(d,free[i],use[i]);ok++}catch(e){fail++}}
+ toast(`${ok}장 올렸습니다.`+(fail?` ${fail}장 실패.`:'')+(fs.length>use.length?` ${fs.length-use.length}장은 5장 초과로 제외.`:''));
+ photos(d);
 }
 
 /* 이름 관리 */
 function members(){
- view='m';
+ view='m';sub();
  app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>이름 관리</b></header><div class="w"><div class="row"><input id="nn" placeholder="새 이름"><button class="p" id="ad">추가</button></div><div id="ml" style="display:grid;gap:8px"></div><button class="s" id="lo">로그아웃</button></div>`;
  back();
  const dr=()=>{$('#ml').innerHTML=MA.map(m=>`<div class="cd r1"><b>${esc(m.name)}${m.active?'':' (사용 안 함)'}</b><button class="s" data-t="${m.id}">${m.active?'사용 안 함':'다시 사용'}</button></div>`).join('')||'<p class="m">아직 등록된 이름이 없습니다.</p>'};
@@ -256,6 +288,7 @@ function members(){
 async function backup(){
  const{data,error}=await sb.from('deliveries').select('*').is('deleted_at',null).order('registered_at');
  if(error)return toast(error.message);
+ const F=[['receipt_no','접수번호'],['sender','발송인'],['recipient','수취인'],['item_name','품목명'],['departure_terminal','발송터미널'],['departure_date','출발일자'],['departure_time','출발시간'],['bus_company','버스회사'],['arrival_terminal','도착터미널'],['arrival_time','도착예정시간'],['arrival_contact','도착문의'],['contact','연락처'],['vehicle_no','차량번호']];
  const cols=[...F.map(f=>f[0]),'status','registered_at','received_at','note'];
  const head=[...F.map(f=>f[1]),'상태','등록시간','수령시간','기타사항','등록자','수령예정자','실제수령자'];
  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
