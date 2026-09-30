@@ -225,7 +225,7 @@ const rsel=(id,mid,oth)=>{const o=oth&&!mid;return`<select id="${id}">${opts(mid
 const rv=id=>{const v=$('#'+id).value;return v==='__o'?[null,$('#'+id+'o').value.trim()||null]:[v||null,null]};
 function detail(d){
  view='form';sub();
- const dt=x=>x?x.slice(5):'';
+ const dt=x=>x?x.slice(0,10):'';
  app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>배송 상세</b></header>
 <div class="w"><div class="info"><b>${esc(d.receipt_no)}</b>
 <div>${esc(d.departure_terminal)} → ${esc(d.arrival_terminal)}</div>
