@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V12</title>
+<title>물표 관리 V15</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -11,6 +11,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 #app{min-height:100dvh;display:flex;flex-direction:column}
 header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
 header b{flex:1;font-size:18px}
+.app-title{user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none}
 .w{width:100%;max-width:640px;margin:0 auto;padding:10px 12px;display:grid;gap:8px;flex:1;align-content:start}
 .box{width:100%;max-width:340px;margin:18vh auto 0;padding:20px;display:grid;gap:12px}
 h1{margin:0;font-size:26px}
@@ -67,7 +68,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 /* V9 - 터미널 정보를 첫 줄에 별도 스타일로 표시하고 출발/도착은 기존 형태 유지 */
 /* V10 - 배송 삭제 시 Storage에 올라간 사진 파일도 함께 삭제 */
 /* V11 - 배송 삭제 시 해당 배송 폴더 안에 남은 파일까지 모두 삭제(폴더 자동 정리) */
-/* V12 - 목록 표시: 수취인을 도착 다음 줄에 배치하고 수령예정/수령자를 사진 다음에 배치 */
+/* V15 - 목록 최상단 "물표" 문구를 글자 선택/복사할 수 없도록 수정 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -128,7 +129,7 @@ async function start(){
 /* 목록 */
 async function home(){
  view='list';
- app.innerHTML=`<header><b>물표</b><button class="s" id="mm">이름관리</button></header>
+ app.innerHTML=`<header><b class="app-title">물표</b><button class="s" id="mm">이름관리</button></header>
 <div class="w"><div id="warn" class="m"></div><button class="p" id="nw">＋ 배송 등록</button>
 <input id="q" placeholder="접수번호, 이름 검색" value="${esc(q)}">
 <div class="chips" id="fl">${['전체',...ST].map(s=>`<button class="ch${s===flt?' on':''}" data-s="${s}">${s}</button>`).join('')}</div>
