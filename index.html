@@ -186,6 +186,8 @@ function newForm(){
   if(!rb)return toast('등록자 이름을 선택하세요.');
   for(const k in o)o[k]=o[k]||null;
   const btn=$('#sv');btn.disabled=true;
+  const{data:dup}=await sb.from('deliveries').select('id').eq('receipt_no',o.receipt_no).is('deleted_at',null);
+  if(dup?.length){btn.disabled=false;return toast('이미 등록된 접수번호입니다.')}
   const{error}=await sb.from('deliveries').insert({...o,raw_text:raw,registered_by:rb,updated_by:rb,note:$('#nt').value.trim()||null});
   if(error){btn.disabled=false;return toast(error.code==='23505'?'이미 등록된 접수번호입니다.':'저장 실패: '+error.message)}
   toast('등록했습니다.');toHome();
