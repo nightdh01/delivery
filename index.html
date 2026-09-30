@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#14213D">
+<title>물표 관리</title>
+<style>
+:root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+header b{flex:1;font-size:18px}
+header select{width:auto;max-width:38vw;padding:6px}
+.w{max-width:640px;margin:0 auto;padding:12px;display:grid;gap:10px}
+.box{max-width:340px;margin:18vh auto 0;padding:20px;display:grid;gap:12px}
+h1{margin:0;font-size:26px}
+label{display:grid;gap:4px;font-size:14px;color:var(--mu)}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:#fff;border:1px solid var(--ln);border-radius:8px;padding:11px}
+button{font:inherit;min-height:44px;border:1px solid var(--ln);border-radius:8px;background:#fff;color:var(--ink);padding:0 14px}
+.p{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700}
+.s{background:transparent}
+header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
+.bk{background:transparent;color:#fff;border:0;font-size:28px;padding:0 6px;min-height:36px}
+.dg{color:#B3261E;border-color:#B3261E}
+.sec{display:grid;gap:10px;background:#fff;border:1px solid var(--ln);border-radius:8px;padding:12px}
+.cd{background:#fff;border:1px solid var(--ln);border-left:6px solid var(--ln);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.cd.a{border-left-color:var(--a)}.cd.b{border-left-color:var(--b)}.cd.c{border-left-color:var(--c)}
+.r1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.m{color:var(--mu);font-size:14px;display:flex;flex-wrap:wrap;gap:0 12px}
+.bd{font-size:13px;font-weight:700;padding:2px 10px;border-radius:99px}
+.bd.a{background:#FFF1D6;color:var(--a)}.bd.b{background:#E1EBFF;color:var(--b)}.bd.c{background:#DDF3E7;color:var(--c)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.ch{border-radius:99px;min-height:40px}
+.ch.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ch.a.on{background:var(--a);border-color:var(--a)}.ch.b.on{background:var(--b);border-color:var(--b)}.ch.c.on{background:var(--c);border-color:var(--c)}
+.row{display:flex;gap:8px}
+.ph{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sl{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden}
+.sl img{width:100%;height:100%;object-fit:cover}
+.sl.e{display:grid;place-items:center;border:2px dashed var(--ln);font-size:28px;color:var(--mu)}
+.x{position:absolute;top:4px;right:4px;min-height:32px;width:32px;padding:0;border-radius:99px;background:#000a;color:#fff;border:0}
+.err{color:#B3261E;margin:0}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
+#toast.on{opacity:1}
+</style></head>
+<body><div id="app"></div><div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
+SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
+EMAIL='dragondha@naver.com';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const $=s=>document.querySelector(s),app=$('#app');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ST=['수령예정','수령중','수령완료'],CL={수령예정:'a',수령중:'b',수령완료:'c'};
+const F=[['receipt_no','접수번호'],['sender','발송인'],['recipient','수취인 (카톡 원문)'],['item_name','품목명'],['departure_terminal','발송터미널'],['departure_date','출발일자','date'],['departure_time','출발시간'],['bus_company','버스회사'],['arrival_terminal','도착터미널'],['arrival_time','도착예정시간'],['arrival_contact','도착문의'],['contact','연락처'],['vehicle_no','차량번호']];
+let MA=[],M=[],me=localStorage.getItem('me')||'',list=[],flt='전체',q='',view='',ch=null;
+const name=id=>MA.find(m=>m.id===id)?.name||'';
+const opts=(sel,ph='선택 안 함')=>`<option value="">${ph}</option>`+M.map(m=>`<option value="${m.id}"${m.id===sel?' selected':''}>${esc(m.name)}</option>`).join('');
+const fmt=t=>t?new Date(t).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+const loc=t=>{if(!t)return'';const d=new Date(t),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
+const toast=t=>{const e=$('#toast');e.textContent=t;e.className='on';clearTimeout(toast.t);toast.t=setTimeout(()=>e.className='',2500)};
+const need=()=>toast('처음 화면 위쪽에서 "나" 이름을 먼저 선택하세요.');
+const back=()=>{const b=$('#bk');if(b)b.onclick=home};
+
+/* 카톡 안내문 자동 추출 */
+function parse(t){
+ const K={receipt_no:'접수번호',sender:'발송인',recipient:'수취인',item_name:'품목명',departure_terminal:'발송터미널',departure_date:'출발일자',departure_time:'출발시간',arrival_terminal:'도착터미널',arrival_time:'도착예정시간',arrival_contact:'도착문의',contact:'연락처',vehicle_no:'차량번호'};
+ const o={};
+ for(const[k,w]of Object.entries(K)){
+  const re=new RegExp('^[\\s\\-•·*]*'+[...w].join('\\s*')+'\\s*[:：]?\\s*(.*)$','m');
+  o[k]=(t.match(re)?.[1]||'').trim();
+ }
+ o.receipt_no=o.receipt_no.replace(/\D/g,'');
+ const bus=o.departure_time.match(/\(([^)]*)\)/);o.bus_company=bus?bus[1].trim():'';
+ const hm=s=>{const m=s.match(/(\d{1,2})\s*(?:시|:)\s*(\d{1,2})?/);return m?m[1].padStart(2,'0')+':'+(m[2]||'00').padStart(2,'0'):s};
+ o.departure_time=hm(o.departure_time);o.arrival_time=hm(o.arrival_time);
+ const dm=o.departure_date.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+ o.departure_date=dm?`${dm[1]}-${dm[2].padStart(2,'0')}-${dm[3].padStart(2,'0')}`:'';
+ o.contact=o.contact.replace(/[^\d-]/g,'');
+ return o;
+}
+
+/* 로그인 */
+function login(msg=''){
+ view='login';
+ app.innerHTML=`<div class="box"><h1>물표 관리</h1><p class="m">사무실 비밀번호를 입력하세요.</p><input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호"><button class="p" id="go">들어가기</button><p class="err">${msg}</p></div>`;
+ const go=async()=>{const{error}=await sb.auth.signInWithPassword({email:EMAIL,password:$('#pw').value});error?login('비밀번호가 맞지 않습니다.'):start()};
+ $('#go').onclick=go;$('#pw').onkeydown=e=>{if(e.key==='Enter')go()};
+}
+async function loadM(){
+ const{data}=await sb.from('members').select('*').order('sort_order').order('created_at');
+ MA=data||[];M=MA.filter(m=>m.active);
+}
+async function start(){
+ const{data:{session}}=await sb.auth.getSession();if(!session)return login();
+ await loadM();await home();
+ if(!ch)ch=sb.channel('d').on('postgres_changes',{event:'*',schema:'public',table:'deliveries'},()=>{if(view==='list')load()}).subscribe();
+}
+
+/* 목록 */
+async function home(){
+ view='list';
+ if(!M.some(m=>m.id===me))me='';
+ app.innerHTML=`<header><b>물표</b><label style="flex-direction:row;color:#fff;align-items:center">나&nbsp;<select id="me">${opts(me,'이름 선택')}</select></label><button class="s" id="mm">이름관리</button></header>
+<div class="w"><div id="warn" class="m"></div><button class="p" id="nw">＋ 배송 등록</button>
+<input id="q" placeholder="접수번호, 이름 검색" value="${esc(q)}">
+<div class="chips" id="fl">${['전체',...ST].map(s=>`<button class="ch${s===flt?' on':''}" data-s="${s}">${s}</button>`).join('')}</div>
+<div id="ls" style="display:grid;gap:8px">불러오는 중…</div><button class="s" id="bu">백업 받기 (CSV)</button></div>`;
+ $('#me').onchange=e=>{me=e.target.value;localStorage.setItem('me',me)};
+ $('#mm').onclick=members;$('#nw').onclick=()=>form(null);$('#bu').onclick=backup;
+ $('#q').oninput=e=>{q=e.target.value;draw()};
+ $('#fl').onclick=e=>{const s=e.target.dataset.s;if(!s)return;flt=s;[...$('#fl').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));draw()};
+ $('#ls').onclick=e=>{const c=e.target.closest('.cd');if(c)openD(c.dataset.id)};
+ await load();
+}
+async function load(){
+ const{data,error}=await sb.from('deliveries').select('*,delivery_photos(count)').is('deleted_at',null).order('registered_at',{ascending:false}).limit(1000);
+ if(error)return toast('불러오기 실패: '+error.message);
+ list=data;if(view==='list')draw();
+}
+function draw(){
+ const ls=$('#ls');if(!ls)return;
+ const k=q.trim().toLowerCase();
+ const r=list.filter(d=>(flt==='전체'||d.status===flt)&&(!k||[d.receipt_no,d.recipient,d.sender,d.item_name,name(d.registered_by),name(d.expected_receiver),d.expected_other,name(d.received_by),d.received_other].join(' ').toLowerCase().includes(k)));
+ ls.innerHTML=r.map(d=>{
+  const rc=name(d.received_by)||d.received_other,ex=name(d.expected_receiver)||d.expected_other;
+  return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><b>${esc(d.receipt_no)}</b><span class="bd ${CL[d.status]}">${d.status}</span></div>
+<div>${esc(d.departure_terminal)} → ${esc(d.arrival_terminal)}</div>
+<div class="m"><span>수취인 ${esc(d.recipient)}</span><span>등록 ${esc(name(d.registered_by))}</span><span>사진 ${d.delivery_photos?.[0]?.count||0}장</span></div>
+<div class="m">${d.status==='수령완료'&&rc?`<span>수령자 ${esc(rc)}</span>`:ex?`<span>수령예정 ${esc(ex)} ${fmt(d.expected_at)}</span>`:''}</div></div>`;
+ }).join('')||'<p class="m">표시할 배송이 없습니다.</p>';
+ const old=list.filter(d=>Date.now()-new Date(d.registered_at)>365*864e5).length;
+ $('#warn').textContent=!M.length?'먼저 "이름관리"에서 사무소 사람들의 이름을 추가하세요.':old?`등록 후 1년이 지난 자료가 ${old}건 있습니다. 아래 백업 받기로 저장해 두세요.`:'';
+}
+
+/* 등록 / 상세 */
+async function openD(id){
+ const{data,error}=await sb.from('deliveries').select('*').eq('id',id).single();
+ if(error)return toast(error.message);form(data);
+}
+const fld=(k,l,t,v)=>`<label>${l}<input name="${k}" type="${t||'text'}" value="${esc(v)}"></label>`;
+const val=k=>document.querySelector(`[name="${k}"]`).value.trim()||null;
+function form(d){
+ view='form';const n=!d;
+ app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>${n?'배송 등록':'배송 상세'}</b></header><div class="w">
+${n?`<label>카톡 안내문 붙여넣기<textarea id="raw" rows="6" placeholder="[고속버스택배 접수안내] 전체를 붙여넣으면 아래 칸이 자동으로 채워집니다."></textarea></label>`
+:`<div class="m"><span>등록 ${esc(name(d.registered_by))} ${fmt(d.registered_at)}</span><span>최근 수정 ${esc(name(d.updated_by))} ${fmt(d.updated_at)}</span></div>
+<div class="sec"><b>수령 상태</b><div class="chips" id="sts">${ST.map(s=>`<button class="ch ${CL[s]}${d.status===s?' on':''}" data-s="${s}">${s}</button>`).join('')}</div></div>`}
+<div class="sec">${F.map(([k,l,t])=>fld(k,l,t,d?d[k]:'')).join('')}</div>
+${n?`<label>등록자<select id="rb">${opts(me,'이름 선택')}</select></label>`
+:`<div class="sec"><label>수령예정자<select id="eb">${opts(d.expected_receiver)}</select></label><label>수령예정자 직접 입력<input id="eo" value="${esc(d.expected_other)}"></label><label>수령예정시간<input id="ea" type="datetime-local" value="${loc(d.expected_at)}"></label>
+<label>실제 수령자<select id="rc">${opts(d.received_by)}</select></label><label>실제 수령자 직접 입력<input id="ro" value="${esc(d.received_other)}"></label>${d.received_at?`<div class="m">수령시간 ${fmt(d.received_at)}</div>`:''}</div>`}
+<label>기타사항<textarea id="nt" rows="3">${esc(d?.note)}</textarea></label>
+${n?'':`<div class="sec"><b>사진 (최대 5장)</b><div id="ph" class="ph"></div></div>`}
+<button class="p" id="sv">저장</button>${n?'':'<button class="s dg" id="dl">삭제</button>'}</div>`;
+ back();
+ if(n){
+  $('#raw').oninput=async e=>{
+   const o=parse(e.target.value);if(!o.receipt_no)return;
+   F.forEach(([k])=>{document.querySelector(`[name="${k}"]`).value=o[k]||''});
+   const{data}=await sb.from('deliveries').select('id').eq('receipt_no',o.receipt_no).is('deleted_at',null);
+   if(data?.length)toast('이미 등록된 접수번호입니다.');
+  };
+ }else{
+  photos(d);
+  $('#sts').onclick=async e=>{
+   const s=e.target.dataset.s;if(!s)return;if(!me)return need();
+   const at=s==='수령완료'?(d.received_at||new Date().toISOString()):null;
+   const{error}=await sb.from('deliveries').update({status:s,received_at:at,updated_by:me}).eq('id',d.id);
+   if(error)return toast(error.message);
+   d.status=s;d.received_at=at;
+   [...$('#sts').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));toast('상태: '+s);
+  };
+  $('#dl').onclick=async()=>{
+   if(!me)return need();if(!confirm('이 배송을 목록에서 삭제할까요?'))return;
+   const{error}=await sb.from('deliveries').update({deleted_at:new Date().toISOString(),updated_by:me}).eq('id',d.id);
+   if(error)return toast(error.message);toast('삭제했습니다.');home();
+  };
+ }
+ $('#sv').onclick=async()=>{
+  const p={};F.forEach(([k])=>p[k]=val(k));p.note=$('#nt').value.trim()||null;
+  if(!p.receipt_no)return toast('접수번호를 입력하세요.');
+  let r;
+  if(n){
+   const rb=$('#rb').value;if(!rb)return toast('등록자 이름을 선택하세요.');
+   Object.assign(p,{registered_by:rb,updated_by:rb,raw_text:$('#raw').value||null});
+   r=await sb.from('deliveries').insert(p);
+  }else{
+   if(!me)return need();
+   Object.assign(p,{expected_receiver:$('#eb').value||null,expected_other:$('#eo').value.trim()||null,expected_at:$('#ea').value?new Date($('#ea').value).toISOString():null,received_by:$('#rc').value||null,received_other:$('#ro').value.trim()||null,updated_by:me});
+   r=await sb.from('deliveries').update(p).eq('id',d.id);
+  }
+  if(r.error)return toast(r.error.code==='23505'?'이미 등록된 접수번호입니다.':'저장 실패: '+r.error.message);
+  toast(n?'등록했습니다.':'저장했습니다.');home();
+ };
+}
+
+/* 사진 5칸 */
+async function photos(d){
+ const{data}=await sb.from('delivery_photos').select('*').eq('delivery_id',d.id);
+ const P={},U={};(data||[]).forEach(p=>P[p.slot]=p);
+ const ps=(data||[]).map(p=>p.file_path);
+ if(ps.length)((await sb.storage.from('photos').createSignedUrls(ps,3600)).data||[]).forEach(x=>U[x.path]=x.signedUrl);
+ const el=$('#ph');if(!el)return;
+ el.innerHTML=[1,2,3,4,5].map(s=>{const p=P[s];return p
+  ?`<div class="sl"><img src="${U[p.file_path]||''}" data-z="1" alt="사진 ${s}"><button class="x" data-x="${s}">✕</button></div>`
+  :`<label class="sl e">＋<input type="file" accept="image/*" data-u="${s}" hidden></label>`}).join('');
+ el.onclick=async e=>{
+  if(e.target.dataset.z)return window.open(e.target.src);
+  const s=e.target.dataset.x;if(!s)return;if(!confirm('이 사진을 삭제할까요?'))return;
+  await sb.storage.from('photos').remove([P[s].file_path]);
+  await sb.from('delivery_photos').delete().eq('id',P[s].id);photos(d);
+ };
+ el.onchange=e=>{const s=e.target.dataset.u;if(s&&e.target.files[0])up(d,+s,e.target.files[0])};
+}
+async function shrink(f){
+ const im=await createImageBitmap(f,{imageOrientation:'from-image'});
+ const k=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');
+ c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+ c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+ return new Promise(r=>c.toBlob(r,'image/jpeg',.78));
+}
+async function up(d,s,f){
+ if(!me)return need();toast('사진 올리는 중…');
+ try{
+  const b=await shrink(f),path=`${d.id}/${s}-${Date.now()}.jpg`;
+  let r=await sb.storage.from('photos').upload(path,b,{contentType:'image/jpeg'});if(r.error)throw r.error;
+  r=await sb.from('delivery_photos').insert({delivery_id:d.id,slot:s,file_path:path,uploaded_by:me});
+  if(r.error){await sb.storage.from('photos').remove([path]);throw r.error}
+  toast('사진을 올렸습니다.');photos(d);
+ }catch(e){toast('사진 업로드 실패: '+e.message)}
+}
+
+/* 이름 관리 */
+function members(){
+ view='m';
+ app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>이름 관리</b></header><div class="w"><div class="row"><input id="nn" placeholder="새 이름"><button class="p" id="ad">추가</button></div><div id="ml" style="display:grid;gap:8px"></div><button class="s" id="lo">로그아웃</button></div>`;
+ back();
+ const dr=()=>{$('#ml').innerHTML=MA.map(m=>`<div class="cd r1"><b>${esc(m.name)}${m.active?'':' (사용 안 함)'}</b><button class="s" data-t="${m.id}">${m.active?'사용 안 함':'다시 사용'}</button></div>`).join('')||'<p class="m">아직 등록된 이름이 없습니다.</p>'};
+ dr();
+ $('#ad').onclick=async()=>{
+  const v=$('#nn').value.trim();if(!v)return;
+  const{error}=await sb.from('members').insert({name:v,sort_order:MA.length});
+  if(error)return toast(error.code==='23505'?'이미 있는 이름입니다.':error.message);
+  $('#nn').value='';await loadM();dr();
+ };
+ $('#ml').onclick=async e=>{
+  const id=e.target.dataset.t;if(!id)return;const m=MA.find(x=>x.id===id);
+  await sb.from('members').update({active:!m.active}).eq('id',id);await loadM();dr();
+ };
+ $('#lo').onclick=()=>sb.auth.signOut();
+}
+
+/* 백업 (CSV, 엑셀에서 한글 정상 표시) */
+async function backup(){
+ const{data,error}=await sb.from('deliveries').select('*').is('deleted_at',null).order('registered_at');
+ if(error)return toast(error.message);
+ const cols=[...F.map(f=>f[0]),'status','registered_at','received_at','note'];
+ const head=[...F.map(f=>f[1]),'상태','등록시간','수령시간','기타사항','등록자','수령예정자','실제수령자'];
+ const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const rows=data.map(d=>[...cols.map(c=>d[c]),name(d.registered_by),name(d.expected_receiver)||d.expected_other,name(d.received_by)||d.received_other].map(cell).join(','));
+ const blob=new Blob(['\ufeff'+[head.map(cell).join(','),...rows].join('\r\n')],{type:'text/csv'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download='물표백업_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT')login()});
+start();
+</script></body></html>
