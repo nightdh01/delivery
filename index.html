@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V5</title>
+<title>물표 관리 V7</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -24,7 +24,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 .dg{color:#B3261E;border-color:#B3261E}
 .bar{position:sticky;bottom:0;z-index:5;width:100%;max-width:640px;margin:auto auto 0;display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--ln)}
 .bar .p{flex:1}
-.cd{background:#fff;border:1px solid var(--ln);border-left:6px solid var(--ln);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.cd{background:#fff;border:1px solid var(--ln);border-left:6px solid var(--ln);border-radius:8px;padding:10px 12px;display:grid;gap:2px;user-select:none;-webkit-user-select:none}
 .cd.a{border-left-color:var(--a)}.cd.b{border-left-color:var(--b)}.cd.c{border-left-color:var(--c)}
 .r1{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .m{color:var(--mu);font-size:14px;display:flex;flex-wrap:wrap;gap:0 12px}
@@ -63,7 +63,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 <body><div id="app"></div><div id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* V5 - 사진 삭제 시 Supabase Storage 삭제 결과를 확인한 뒤 DB 레코드를 삭제합니다. */
+/* V7 - V6 기능 유지 + 붙여넣기 시 중복 안내문 반복 표시 방지 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -143,6 +143,7 @@ async function load(){
  list=data;if(view==='list')draw();
 }
 const md=x=>{if(!x)return'';const[,m,d]=x.split('-');return`${+m}/${+d}`};
+const bus=x=>{x=String(x||'').trim();return x.length>4?x.slice(0,2):x};
 function draw(){
  const ls=$('#ls');if(!ls)return;
  const k=q.trim().toLowerCase();
@@ -152,8 +153,7 @@ function draw(){
  ls.innerHTML=cur.map(d=>{
   const rc=name(d.received_by)||d.received_other,ex=name(d.expected_receiver)||d.expected_other;
   return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><span><span class="no">${d.display_no}</span><b>${esc(d.receipt_no)}</b></span><span class="bd ${CL[d.status]}">${d.status}</span></div>
-<div>${esc(d.departure_terminal)} → ${esc(d.arrival_terminal)}</div>
-<div class="tm"><span><i>출발</i>${md(d.departure_date)} ${esc(d.departure_time)}</span><span><i>도착</i>${esc(d.arrival_time)}</span></div>
+<div>[${esc(d.departure_terminal)} → ${esc(d.arrival_terminal)}] 출발 ${md(d.departure_date)} ${esc(d.departure_time)}${d.bus_company?`(${esc(bus(d.bus_company))})`:''}　도착 ${esc(d.arrival_time)}</div>
 <div class="m"><span>수취인 ${esc(d.recipient)}</span><span>등록 ${esc(name(d.registered_by))}</span><span>사진 ${d.delivery_photos?.[0]?.count||0}장</span></div>
 ${d.status==='수령완료'&&rc?`<div class="m"><span>수령자 ${esc(rc)}</span></div>`:ex?`<div class="ex">수령예정 ${esc(ex)} ${fmt(d.expected_at)}</div>`:''}</div>`;
  }).join('')||'<p class="m">표시할 배송이 없습니다.</p>';
@@ -173,13 +173,31 @@ function newForm(){
 <label>기타사항<textarea id="nt" rows="2"></textarea></label></div>
 <div class="bar"><button class="p" id="sv">저장</button></div>`;
  back();
+ let parseCheckSeq=0;
  $('#raw').oninput=async e=>{
+  const seq=++parseCheckSeq;
   const t=e.target.value,o=parse(t),pv=$('#pv');
   if(!t.trim()){pv.textContent='';return}
   if(!o.receipt_no){pv.textContent='접수번호를 찾지 못했습니다. 안내문 전체를 붙여넣었는지 확인하세요.';return}
-  pv.textContent=`인식: 접수번호 ${o.receipt_no}, ${o.departure_terminal} → ${o.arrival_terminal}, 수취인 ${o.recipient}`;
-  const{data}=await sb.from('deliveries').select('id').eq('receipt_no',o.receipt_no).is('deleted_at',null);
-  if(data?.length)pv.textContent+=' (이미 등록된 접수번호입니다)';
+
+  const base=`인식: 접수번호 ${o.receipt_no}, ${o.departure_terminal} → ${o.arrival_terminal}, 수취인 ${o.recipient}`;
+  pv.textContent=base;
+
+  const{data,error}=await sb.from('deliveries')
+    .select('id')
+    .eq('receipt_no',o.receipt_no)
+    .is('deleted_at',null);
+
+  // 붙여넣기 과정에서 여러 input 이벤트가 발생해도
+  // 가장 최근 입력 결과만 화면에 반영합니다.
+  if(seq!==parseCheckSeq)return;
+
+  if(error){
+    console.error('[중복 확인 실패]',error);
+    return;
+  }
+
+  pv.textContent=base+(data?.length?' (이미 등록된 접수번호입니다)':'');
  };
  $('#sv').onclick=async()=>{
   const raw=$('#raw').value,o=parse(raw),rb=$('#rb').value;
