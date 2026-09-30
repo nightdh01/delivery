@@ -41,6 +41,14 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 .ch.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ch.a.on{background:var(--a);border-color:var(--a)}.ch.b.on{background:var(--b);border-color:var(--b)}.ch.c.on{background:var(--c);border-color:var(--c)}
 .row{display:flex;gap:8px}
+.no{background:var(--ink);color:#fff;border-radius:6px;padding:0 7px;font-size:13px;font-weight:700;margin-right:6px}
+.tm{display:flex;flex-wrap:wrap;gap:0 14px;font-size:14px}
+.tm i{font-style:normal;color:var(--mu);margin-right:4px}
+.ex{color:var(--b);background:#E1EBFF;font-weight:700;border-radius:6px;padding:1px 8px;justify-self:start}
+.pager{display:flex;align-items:center;justify-content:center;gap:8px}
+.pager select{width:auto}
+.pager button{min-height:40px}
+.pager button:disabled{opacity:.4}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .g2 label{gap:4px}
 .ph{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
@@ -62,7 +70,8 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ST=['수령예정','수령중','수령완료'],CL={수령예정:'a',수령중:'b',수령완료:'c'};
-let MA=[],M=[],list=[],flt='전체',q='',view='',ch=null,PH={};
+const PAGE=20; /* 한 화면에 보이는 배송 수 */
+let MA=[],M=[],list=[],flt='전체',q='',view='',ch=null,PH={},pg=1;
 const name=id=>MA.find(m=>m.id===id)?.name||'';
 const opts=(sel,ph='선택 안 함')=>`<option value="">${ph}</option>`+M.map(m=>`<option value="${m.id}"${m.id===sel?' selected':''}>${esc(m.name)}</option>`).join('');
 const fmt=t=>t?new Date(t).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
@@ -118,11 +127,13 @@ async function home(){
 <div class="w"><div id="warn" class="m"></div><button class="p" id="nw">＋ 배송 등록</button>
 <input id="q" placeholder="접수번호, 이름 검색" value="${esc(q)}">
 <div class="chips" id="fl">${['전체',...ST].map(s=>`<button class="ch${s===flt?' on':''}" data-s="${s}">${s}</button>`).join('')}</div>
-<div id="ls" style="display:grid;gap:8px">불러오는 중…</div><button class="s" id="bu">백업 받기 (CSV)</button></div>`;
+<div id="cnt" class="m"></div><div id="ls" style="display:grid;gap:8px">불러오는 중…</div><div id="pgr" class="pager"></div><button class="s" id="bu">백업 받기 (CSV)</button></div>`;
  $('#mm').onclick=members;$('#nw').onclick=newForm;$('#bu').onclick=backup;
- $('#q').oninput=e=>{q=e.target.value;draw()};
- $('#fl').onclick=e=>{const s=e.target.dataset.s;if(!s)return;flt=s;[...$('#fl').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));draw()};
+ $('#q').oninput=e=>{q=e.target.value;pg=1;draw()};
+ $('#fl').onclick=e=>{const s=e.target.dataset.s;if(!s)return;flt=s;pg=1;[...$('#fl').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));draw()};
  $('#ls').onclick=e=>{const c=e.target.closest('.cd');if(c)openD(c.dataset.id)};
+ $('#pgr').onclick=e=>{const p=e.target.dataset.p;if(p){pg=+p;draw();scrollTo(0,0)}};
+ $('#pgr').onchange=e=>{if(e.target.id==='ps'){pg=+e.target.value;draw();scrollTo(0,0)}};
  await load();
 }
 async function load(){
@@ -130,17 +141,23 @@ async function load(){
  if(error)return toast('불러오기 실패: '+error.message);
  list=data;if(view==='list')draw();
 }
+const md=x=>{if(!x)return'';const[,m,d]=x.split('-');return`${+m}/${+d}`};
 function draw(){
  const ls=$('#ls');if(!ls)return;
  const k=q.trim().toLowerCase();
  const r=list.filter(d=>(flt==='전체'||d.status===flt)&&(!k||[d.receipt_no,d.recipient,d.sender,d.item_name,name(d.registered_by),name(d.expected_receiver),d.expected_other,name(d.received_by),d.received_other].join(' ').toLowerCase().includes(k)));
- ls.innerHTML=r.map(d=>{
+ const pages=Math.max(1,Math.ceil(r.length/PAGE));if(pg>pages)pg=pages;
+ const cur=r.slice((pg-1)*PAGE,pg*PAGE);
+ ls.innerHTML=cur.map(d=>{
   const rc=name(d.received_by)||d.received_other,ex=name(d.expected_receiver)||d.expected_other;
-  return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><b>${esc(d.receipt_no)}</b><span class="bd ${CL[d.status]}">${d.status}</span></div>
+  return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><span><span class="no">${d.display_no}</span><b>${esc(d.receipt_no)}</b></span><span class="bd ${CL[d.status]}">${d.status}</span></div>
 <div>${esc(d.departure_terminal)} → ${esc(d.arrival_terminal)}</div>
+<div class="tm"><span><i>출발</i>${md(d.departure_date)} ${esc(d.departure_time)}</span><span><i>도착</i>${esc(d.arrival_time)}</span></div>
 <div class="m"><span>수취인 ${esc(d.recipient)}</span><span>등록 ${esc(name(d.registered_by))}</span><span>사진 ${d.delivery_photos?.[0]?.count||0}장</span></div>
-<div class="m">${d.status==='수령완료'&&rc?`<span>수령자 ${esc(rc)}</span>`:ex?`<span>수령예정 ${esc(ex)} ${fmt(d.expected_at)}</span>`:''}</div></div>`;
+${d.status==='수령완료'&&rc?`<div class="m"><span>수령자 ${esc(rc)}</span></div>`:ex?`<div class="ex">수령예정 ${esc(ex)} ${fmt(d.expected_at)}</div>`:''}</div>`;
  }).join('')||'<p class="m">표시할 배송이 없습니다.</p>';
+ $('#cnt').textContent=r.length?`총 ${r.length}건`+(pages>1?` (${pg}/${pages}쪽)`:''):'';
+ $('#pgr').innerHTML=pages>1?`<button data-p="${pg-1}"${pg<2?' disabled':''}>‹ 이전</button><select id="ps">${Array.from({length:pages},(_,i)=>`<option value="${i+1}"${i+1===pg?' selected':''}>${i+1} / ${pages}쪽</option>`).join('')}</select><button data-p="${pg+1}"${pg>=pages?' disabled':''}>다음 ›</button>`:'';
  const old=list.filter(d=>Date.now()-new Date(d.registered_at)>365*864e5).length;
  $('#warn').textContent=!M.length?'먼저 "이름관리"에서 사무소 사람들의 이름을 추가하세요.':old?`등록 후 1년이 지난 자료가 ${old}건 있습니다. 아래 백업 받기로 저장해 두세요.`:'';
 }
