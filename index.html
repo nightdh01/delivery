@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V11</title>
+<title>물표 관리 V12</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -67,6 +67,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 /* V9 - 터미널 정보를 첫 줄에 별도 스타일로 표시하고 출발/도착은 기존 형태 유지 */
 /* V10 - 배송 삭제 시 Storage에 올라간 사진 파일도 함께 삭제 */
 /* V11 - 배송 삭제 시 해당 배송 폴더 안에 남은 파일까지 모두 삭제(폴더 자동 정리) */
+/* V12 - 목록 표시: 수취인을 도착 다음 줄에 배치하고 수령예정/수령자를 사진 다음에 배치 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -156,9 +157,8 @@ function draw(){
  ls.innerHTML=cur.map(d=>{
   const rc=name(d.received_by)||d.received_other,ex=name(d.expected_receiver)||d.expected_other;
   return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><span><span class="no">${d.display_no}</span><b>${esc(d.receipt_no)}</b><span class="route"> [${esc(d.departure_terminal)} &gt; ${esc(d.arrival_terminal)}]</span></span><span class="bd ${CL[d.status]}">${d.status}</span></div>
-<div class="tm">출발 ${md(d.departure_date)} ${esc(d.departure_time)}${d.bus_company?`(${esc(bus(d.bus_company))})`:''}　도착 ${esc(d.arrival_time)}</div>
-<div class="m"><span>수취인 ${esc(d.recipient)}</span><span>등록 ${esc(name(d.registered_by))}</span><span>사진 ${d.delivery_photos?.[0]?.count||0}장</span></div>
-${d.status==='수령완료'&&rc?`<div class="m"><span>수령자 ${esc(rc)}</span></div>`:ex?`<div class="ex">수령예정 ${esc(ex)} ${fmt(d.expected_at)}</div>`:''}</div>`;
+<div class="tm"><span><i>출발</i>${md(d.departure_date)} ${esc(d.departure_time)}${d.bus_company?`(${esc(bus(d.bus_company))})`:''}</span><span><i>도착</i>${esc(d.arrival_time)}</span><span><i>수취인</i>${esc(d.recipient)}</span></div>
+<div class="m"><span>등록 ${esc(name(d.registered_by))}</span><span>사진 ${d.delivery_photos?.[0]?.count||0}장</span>${d.status==='수령완료'&&rc?`<span>수령자 ${esc(rc)}</span>`:ex?`<span class="ex">수령예정 ${esc(ex)} ${fmt(d.expected_at)}</span>`:''}</div></div>`;
  }).join('')||'<p class="m">표시할 배송이 없습니다.</p>';
  $('#cnt').textContent=r.length?`총 ${r.length}건`+(pages>1?` (${pg}/${pages}쪽)`:''):'';
  $('#pgr').innerHTML=pages>1?`<button data-p="${pg-1}"${pg<2?' disabled':''}>‹ 이전</button><select id="ps">${Array.from({length:pages},(_,i)=>`<option value="${i+1}"${i+1===pg?' selected':''}>${i+1} / ${pages}쪽</option>`).join('')}</select><button data-p="${pg+1}"${pg>=pages?' disabled':''}>다음 ›</button>`:'';
