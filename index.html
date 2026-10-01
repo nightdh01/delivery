@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V15</title>
+<title>물표 관리 V16</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -69,6 +69,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 /* V10 - 배송 삭제 시 Storage에 올라간 사진 파일도 함께 삭제 */
 /* V11 - 배송 삭제 시 해당 배송 폴더 안에 남은 파일까지 모두 삭제(폴더 자동 정리) */
 /* V15 - 목록 최상단 "물표" 문구를 글자 선택/복사할 수 없도록 수정 */
+/* V16 - 카톡 안내문 추출 시 비어 있는 항목(예: 차량번호)이 다음 줄 내용을 가져오던 오류 수정 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -95,7 +96,7 @@ function parse(t){
  const K={receipt_no:'접수번호',sender:'발송인',recipient:'수취인',item_name:'품목명',departure_terminal:'발송터미널',departure_date:'출발일자',departure_time:'출발시간',arrival_terminal:'도착터미널',arrival_time:'도착예정시간',arrival_contact:'도착문의',contact:'연락처',vehicle_no:'차량번호'};
  const o={};
  for(const[k,w]of Object.entries(K)){
-  const re=new RegExp('^[\\s\\-•·*]*'+[...w].join('\\s*')+'\\s*[:：]?\\s*(.*)$','m');
+  const re=new RegExp('^[ \\t\\-•·*]*'+[...w].join('[ \\t]*')+'[ \\t]*[:：]?[ \\t]*(.*)$','m');
   o[k]=(t.match(re)?.[1]||'').trim();
  }
  o.receipt_no=o.receipt_no.replace(/\D/g,'');
