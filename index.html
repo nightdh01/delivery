@@ -1,9 +1,20 @@
 <!doctype html>
+<!--
+ ★★★ 버전 관리 규칙 (사람과 AI 모두 반드시 지켜 주세요) ★★★
+ 이 파일을 수정할 때는 절대 같은 이름으로 덮어쓰지 말고, 반드시 "다음 버전"으로 새로 저장하세요.
+ (같은 이름으로 덮어쓰면 이전 파일이 열리고, 같은 이름의 결과물이 여러 개 생겨 혼란스럽다는 사용자 요청이 있었습니다.)
+   1. 파일 이름: index_v숫자.html  (예: 현재 index_v18.html → 수정본은 index_v19.html)
+      GitHub에 올릴 때만 파일 이름을 index.html 로 바꿉니다.
+   2. <title> 의 "V숫자"를 새 버전 번호로 올리세요.
+   3. 아래 스크립트 영역의 "변경 이력"에 새 버전 한 줄을 추가하세요.
+   4. 수정할 때는 사용자가 올린 "가장 최신 파일"을 기준으로 하세요. 이전 버전을 기준으로 하면 기능이 사라집니다.
+   5. 사용자는 개발자가 아닙니다. SQL 실행을 요구하지 말고, 필요한 DB 수정은 Supabase Table Editor에서 가능한 방법으로 안내하세요.
+-->
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V17</title>
+<title>물표 관리 V18</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -72,6 +83,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 /* V15 - 목록 최상단 "물표" 문구를 글자 선택/복사할 수 없도록 수정 */
 /* V16 - 카톡 안내문 추출 시 비어 있는 항목(예: 차량번호)이 다음 줄 내용을 가져오던 오류 수정 */
 /* V17 - 목록에서 수령자 이름을 녹색으로 강조 */
+/* V18 - 목록을 서버에서 20건씩만 받아오도록 변경(1,000건 제한 해소), 목록에서 카톡 원문(raw_text) 제외, 백업(CSV)을 1,000건씩 나눠 전체 받기 + 번호 열 추가 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -80,7 +92,7 @@ const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ST=['수령예정','수령중','수령완료'],CL={수령예정:'a',수령중:'b',수령완료:'c'};
 const PAGE=20; /* 한 화면에 보이는 배송 수 */
-let MA=[],M=[],list=[],flt='전체',q='',view='',ch=null,PH={},pg=1;
+let MA=[],M=[],list=[],flt='전체',q='',view='',ch=null,PH={},pg=1,total=0,seq=0,qt=0,rt=0,oldN=0;
 const name=id=>MA.find(m=>m.id===id)?.name||'';
 const opts=(sel,ph='선택 안 함')=>`<option value="">${ph}</option>`+M.map(m=>`<option value="${m.id}"${m.id===sel?' selected':''}>${esc(m.name)}</option>`).join('');
 const fmt=t=>t?new Date(t).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
@@ -126,7 +138,7 @@ async function start(){
  const{data:{session}}=await sb.auth.getSession();if(!session)return login();
  history.replaceState({v:'list'},'');
  await loadM();await home();
- if(!ch)ch=sb.channel('d').on('postgres_changes',{event:'*',schema:'public',table:'deliveries'},()=>{if(view==='list')load()}).subscribe();
+ if(!ch)ch=sb.channel('d').on('postgres_changes',{event:'*',schema:'public',table:'deliveries'},()=>{if(view==='list'){clearTimeout(rt);rt=setTimeout(load,400)}}).subscribe();
 }
 
 /* 목록 */
@@ -138,36 +150,57 @@ async function home(){
 <div class="chips" id="fl">${['전체',...ST].map(s=>`<button class="ch${s===flt?' on':''}" data-s="${s}">${s}</button>`).join('')}</div>
 <div id="cnt" class="m"></div><div id="ls" style="display:grid;gap:8px">불러오는 중…</div><div id="pgr" class="pager"></div><button class="s" id="bu">백업 받기 (CSV)</button></div>`;
  $('#mm').onclick=members;$('#nw').onclick=newForm;$('#bu').onclick=backup;
- $('#q').oninput=e=>{q=e.target.value;pg=1;draw()};
- $('#fl').onclick=e=>{const s=e.target.dataset.s;if(!s)return;flt=s;pg=1;[...$('#fl').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));draw()};
+ $('#q').oninput=e=>{q=e.target.value;pg=1;clearTimeout(qt);qt=setTimeout(load,300)};
+ $('#fl').onclick=e=>{const s=e.target.dataset.s;if(!s)return;flt=s;pg=1;[...$('#fl').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));load()};
  $('#ls').onclick=e=>{const c=e.target.closest('.cd');if(c)openD(c.dataset.id)};
- $('#pgr').onclick=e=>{const p=e.target.dataset.p;if(p){pg=+p;draw();scrollTo(0,0)}};
- $('#pgr').onchange=e=>{if(e.target.id==='ps'){pg=+e.target.value;draw();scrollTo(0,0)}};
- await load();
+ $('#pgr').onclick=e=>{const p=e.target.dataset.p;if(p){pg=+p;load();scrollTo(0,0)}};
+ $('#pgr').onchange=e=>{if(e.target.id==='ps'){pg=+e.target.value;load();scrollTo(0,0)}};
+ checkOld();await load();
 }
+/* 목록 불러오기: 서버에서 한 쪽(PAGE건)만 받아옵니다. 목록에는 카톡 원문(raw_text)을 받아오지 않습니다. */
+const COLS='id,display_no,receipt_no,departure_terminal,arrival_terminal,departure_date,departure_time,bus_company,arrival_time,recipient,registered_by,registered_at,status,expected_receiver,expected_other,expected_at,received_by,received_other,delivery_photos(count)';
 async function load(){
- const{data,error}=await sb.from('deliveries').select('*,delivery_photos(count)').is('deleted_at',null).order('registered_at',{ascending:false}).limit(1000);
- if(error)return toast('불러오기 실패: '+error.message);
- list=data;if(view==='list')draw();
+ const my=++seq,ls=$('#ls');if(ls)ls.style.opacity='.5';
+ let qb=sb.from('deliveries').select(COLS,{count:'exact'}).is('deleted_at',null);
+ if(flt!=='전체')qb=qb.eq('status',flt);
+ const k=q.trim().replace(/[,()*%\\"]/g,' ').replace(/\s+/g,' ').trim();
+ if(k){
+  const ids=MA.filter(m=>m.name.toLowerCase().includes(k.toLowerCase())).map(m=>m.id);
+  const c=['receipt_no','recipient','sender','item_name','expected_other','received_other'].map(f=>`${f}.ilike.*${k}*`);
+  if(ids.length)['registered_by','expected_receiver','received_by'].forEach(f=>c.push(`${f}.in.(${ids.join(',')})`));
+  qb=qb.or(c.join(','));
+ }
+ const{data,error,count}=await qb.order('registered_at',{ascending:false}).order('display_no',{ascending:false}).range((pg-1)*PAGE,pg*PAGE-1);
+ if(my!==seq)return;
+ if(error){
+  if(error.code==='PGRST103'&&pg>1){pg--;return load()}
+  if(ls)ls.style.opacity='';
+  return toast('불러오기 실패: '+error.message);
+ }
+ total=count||0;list=data;
+ if(view==='list')draw();
 }
+async function checkOld(){
+ const t=new Date(Date.now()-365*864e5).toISOString();
+ const{count}=await sb.from('deliveries').select('id',{count:'exact',head:true}).is('deleted_at',null).lt('registered_at',t);
+ oldN=count||0;showWarn();
+}
+const showWarn=()=>{const w=$('#warn');if(w)w.textContent=!M.length?'먼저 "이름관리"에서 사무소 사람들의 이름을 추가하세요.':oldN?`등록 후 1년이 지난 자료가 ${oldN}건 있습니다. 아래 백업 받기로 저장해 두세요.`:''};
 const md=x=>{if(!x)return'';const[,m,d]=x.split('-');return`${+m}/${+d}`};
 const bus=x=>{x=String(x||'').trim();return x.length>4?x.slice(0,2):x};
 function draw(){
  const ls=$('#ls');if(!ls)return;
- const k=q.trim().toLowerCase();
- const r=list.filter(d=>(flt==='전체'||d.status===flt)&&(!k||[d.receipt_no,d.recipient,d.sender,d.item_name,name(d.registered_by),name(d.expected_receiver),d.expected_other,name(d.received_by),d.received_other].join(' ').toLowerCase().includes(k)));
- const pages=Math.max(1,Math.ceil(r.length/PAGE));if(pg>pages)pg=pages;
- const cur=r.slice((pg-1)*PAGE,pg*PAGE);
- ls.innerHTML=cur.map(d=>{
+ ls.style.opacity='';
+ ls.innerHTML=list.map(d=>{
   const rc=name(d.received_by)||d.received_other,ex=name(d.expected_receiver)||d.expected_other;
   return`<div class="cd ${CL[d.status]}" data-id="${d.id}"><div class="r1"><span><span class="no">${d.display_no}</span><b>${esc(d.receipt_no)}</b><span class="route"> [${esc(d.departure_terminal)} &gt; ${esc(d.arrival_terminal)}]</span></span><span class="bd ${CL[d.status]}">${d.status}</span></div>
 <div class="tm"><span><i>출발</i>${md(d.departure_date)} ${esc(d.departure_time)}${d.bus_company?`(${esc(bus(d.bus_company))})`:''}</span><span><i>도착</i>${esc(d.arrival_time)}</span><span><i>수취인</i>${esc(d.recipient)}</span></div>
 <div class="m"><span>등록 ${esc(name(d.registered_by))}</span><span>사진 ${d.delivery_photos?.[0]?.count||0}장</span>${d.status==='수령완료'&&rc?`<span class="rc">수령자 ${esc(rc)}</span>`:ex?`<span class="ex">수령예정 ${esc(ex)} ${fmt(d.expected_at)}</span>`:''}</div></div>`;
  }).join('')||'<p class="m">표시할 배송이 없습니다.</p>';
- $('#cnt').textContent=r.length?`총 ${r.length}건`+(pages>1?` (${pg}/${pages}쪽)`:''):'';
+ const pages=Math.max(1,Math.ceil(total/PAGE));
+ $('#cnt').textContent=total?`총 ${total}건`+(pages>1?` (${pg}/${pages}쪽)`:''):'';
  $('#pgr').innerHTML=pages>1?`<button data-p="${pg-1}"${pg<2?' disabled':''}>‹ 이전</button><select id="ps">${Array.from({length:pages},(_,i)=>`<option value="${i+1}"${i+1===pg?' selected':''}>${i+1} / ${pages}쪽</option>`).join('')}</select><button data-p="${pg+1}"${pg>=pages?' disabled':''}>다음 ›</button>`:'';
- const old=list.filter(d=>Date.now()-new Date(d.registered_at)>365*864e5).length;
- $('#warn').textContent=!M.length?'먼저 "이름관리"에서 사무소 사람들의 이름을 추가하세요.':old?`등록 후 1년이 지난 자료가 ${old}건 있습니다. 아래 백업 받기로 저장해 두세요.`:'';
+ showWarn();
 }
 
 /* 배송 등록: 카톡 안내문 + 등록자 + 기타사항만 */
@@ -377,11 +410,16 @@ function members(){
 
 /* 백업 (CSV, 엑셀에서 한글 정상 표시) */
 async function backup(){
- const{data,error}=await sb.from('deliveries').select('*').is('deleted_at',null).order('registered_at');
- if(error)return toast(error.message);
+ toast('백업 자료를 모으는 중…');
+ const data=[];
+ for(let from=0;;from+=1000){
+  const{data:b,error}=await sb.from('deliveries').select('*').is('deleted_at',null).order('display_no',{ascending:true}).range(from,from+999);
+  if(error){if(error.code==='PGRST103')break;return toast('백업 실패: '+error.message)}
+  data.push(...b);if(b.length<1000)break;
+ }
  const F=[['receipt_no','접수번호'],['sender','발송인'],['recipient','수취인'],['item_name','품목명'],['departure_terminal','발송터미널'],['departure_date','출발일자'],['departure_time','출발시간'],['bus_company','버스회사'],['arrival_terminal','도착터미널'],['arrival_time','도착예정시간'],['arrival_contact','도착문의'],['contact','연락처'],['vehicle_no','차량번호']];
- const cols=[...F.map(f=>f[0]),'status','registered_at','received_at','note'];
- const head=[...F.map(f=>f[1]),'상태','등록시간','수령시간','기타사항','등록자','수령예정자','실제수령자'];
+ const cols=['display_no',...F.map(f=>f[0]),'status','registered_at','received_at','note'];
+ const head=['번호',...F.map(f=>f[1]),'상태','등록시간','수령시간','기타사항','등록자','수령예정자','실제수령자'];
  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
  const rows=data.map(d=>[...cols.map(c=>d[c]),name(d.registered_by),name(d.expected_receiver)||d.expected_other,name(d.received_by)||d.received_other].map(cell).join(','));
  const blob=new Blob(['\ufeff'+[head.map(cell).join(','),...rows].join('\r\n')],{type:'text/csv'});
