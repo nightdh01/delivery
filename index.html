@@ -3,18 +3,21 @@
  ★★★ 버전 관리 규칙 (사람과 AI 모두 반드시 지켜 주세요) ★★★
  이 파일을 수정할 때는 절대 같은 이름으로 덮어쓰지 말고, 반드시 "다음 버전"으로 새로 저장하세요.
  (같은 이름으로 덮어쓰면 이전 파일이 열리고, 같은 이름의 결과물이 여러 개 생겨 혼란스럽다는 사용자 요청이 있었습니다.)
-   1. 파일 이름: index_v숫자.html  (예: 현재 index_v20.html → 수정본은 index_v21.html)
+   1. 버전 번호는 "v메이저.마이너" 형식입니다 (예: v2.01). 작은 수정과 부가 기능은 뒤 숫자만 올리고(v2.01 → v2.02),
+      메인 기능이 바뀔 때만 앞 숫자를 올립니다(v2.05 → v3.00). (이전 표기 V20 = v2.00)
+   2. 파일 이름: index_v버전.html  (예: 현재 index_v2.01.html → 수정본은 index_v2.02.html)
       GitHub에 올릴 때만 파일 이름을 index.html 로 바꿉니다.
-   2. <title> 의 "V숫자"를 새 버전 번호로 올리세요.
-   3. 아래 스크립트 영역의 "변경 이력"에 새 버전 한 줄을 추가하세요.
-   4. 수정할 때는 사용자가 올린 "가장 최신 파일"을 기준으로 하세요. 이전 버전을 기준으로 하면 기능이 사라집니다.
-   5. 사용자는 개발자가 아닙니다. SQL 실행을 요구하지 말고, 필요한 DB 수정은 Supabase Table Editor에서 가능한 방법으로 안내하세요.
+   3. <title> 과 스크립트의 VER 값(화면 맨 위에 표시되는 버전)을 새 버전 번호로 올리세요.
+   4. 아래 스크립트 영역의 "변경 이력"에 새 버전 한 줄을 추가하세요.
+   5. 수정할 때는 사용자가 올린 "가장 최신 파일"을 기준으로 하세요. 이전 버전을 기준으로 하면 기능이 사라집니다.
+   6. 사용자는 개발자가 아닙니다. SQL 실행을 요구하지 말고, 필요한 DB 수정은 Supabase Table Editor에서 가능한 방법으로 안내하세요.
+      (Table Editor로 할 수 없는 경우에만 SQL을 한 번, 복사해서 붙여넣기만 하면 되게 안내하세요.)
 -->
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 V20</title>
+<title>물표 관리 v2.01</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -80,6 +83,10 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 .rq b{color:#B3261E;font-weight:400}
 .sp{grid-column:1/-1}
 .ok{color:var(--c)}
+.hd b{flex:none;white-space:nowrap}
+.hinfo{flex:1;min-width:0;white-space:nowrap;font-size:10.5px;line-height:12px}
+.u1{color:#FFB454;font-weight:700}
+.u2{color:#FF7B72;font-weight:700}
 </style></head>
 <body><div id="app"></div><div id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -93,6 +100,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 /* V18 - 목록을 서버에서 20건씩만 받아오도록 변경(1,000건 제한 해소), 목록에서 카톡 원문(raw_text) 제외, 백업(CSV)을 1,000건씩 나눠 전체 받기 + 번호 열 추가 */
 /* V19 - 목록 위의 "1년 지난 자료" 경고 삭제 (백업 받기 버튼은 유지) */
 /* V20 - 배송 등록 화면 개편: 안내문 칸을 줄이고 기본 9개 항목을 함께 표시, 카톡 없이 직접 입력 가능, 접수번호 필수(공백·하이픈 제거 후 중복 확인), 품목명·차량번호·도착문의·연락처는 화면에서 빼고 안내문 붙여넣기 시 계속 저장 */
+/* v2.01 - 목록 화면 맨 위에 버전, 한국시간 실시간 시계(초 단위), DB·Storage 사용량 표시(80% 이상 주황, 90% 이상 빨강). 사용량은 Supabase의 get_usage 함수가 있어야 표시되고, 없으면 - 로 나옵니다 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -151,14 +159,44 @@ async function start(){
 }
 
 /* 목록 */
+/* 헤더: 버전, 한국시간 시계, DB·Storage 사용량 (로그인 후 목록 화면에서만 보임. 사용량은 Supabase의 get_usage 함수가 필요하고, 없으면 - 로 표시) */
+const VER='v2.01';
+const LIM_DB=500*1048576,LIM_ST=1073741824; /* 무료 플랜 한도. 플랜을 바꾸면 이 값과 아래 표시 글자도 바꾸세요 */
+const KST=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
+const kst=()=>{const o={};KST.formatToParts(new Date()).forEach(p=>{o[p.type]=p.value});return`${o.year}.${o.month}.${o.day}(${o.weekday}) ${o.hour}:${o.minute}:${o.second}`};
+const mbTxt=b=>{const m=b/1048576;return m>=1024?(+(m/1024).toFixed(1))+'GB':(m>=10?Math.round(m):+m.toFixed(1))+'MB'};
+const usageHtml=(label,b,lim,limTxt)=>{
+ if(b==null)return`${label} -`;
+ const r=b/lim*100,p=r>0&&r<1?'<1':Math.round(r),t=`${p}% (${mbTxt(b)} / ${limTxt})`;
+ return`${label} `+(r>=90?`<span class="u2">${t}</span>`:r>=80?`<span class="u1">${t}</span>`:t);
+};
+let U=null,lastU=0,clk=0;
+async function usage(){
+ lastU=Date.now();
+ const{data,error}=await sb.rpc('get_usage');
+ U=error||!data?null:data;showUsage();
+}
+function showUsage(){
+ const a=$('#hdb'),b=$('#hst');if(!a||!b)return;
+ a.innerHTML=usageHtml('DB Usage',U&&U.db_bytes,LIM_DB,'500MB');
+ b.innerHTML=usageHtml('Storage',U&&U.storage_bytes,LIM_ST,'1GB');
+}
+function tick(){
+ const e=$('#hclk');
+ if(!e){clearInterval(clk);clk=0;return}
+ e.textContent=VER+'\u00a0\u00a0'+kst();
+ if(Date.now()-lastU>3e5)usage();
+}
+function startClock(){clearInterval(clk);showUsage();tick();clk=setInterval(tick,1000)}
+
 async function home(){
  view='list';
- app.innerHTML=`<header><b class="app-title">물표</b><button class="s" id="mm">이름관리</button></header>
+ app.innerHTML=`<header class="hd"><b class="app-title">물표</b><div class="hinfo"><div id="hclk"></div><div id="hdb"></div><div id="hst"></div></div><button class="s" id="mm">이름관리</button></header>
 <div class="w"><div id="warn" class="m"></div><button class="p" id="nw">＋ 배송 등록</button>
 <input id="q" placeholder="접수번호, 이름 검색" value="${esc(q)}">
 <div class="chips" id="fl">${['전체',...ST].map(s=>`<button class="ch${s===flt?' on':''}" data-s="${s}">${s}</button>`).join('')}</div>
 <div id="cnt" class="m"></div><div id="ls" style="display:grid;gap:8px">불러오는 중…</div><div id="pgr" class="pager"></div><button class="s" id="bu">백업 받기 (CSV)</button></div>`;
- $('#mm').onclick=members;$('#nw').onclick=newForm;$('#bu').onclick=backup;
+ $('#mm').onclick=members;$('#nw').onclick=newForm;$('#bu').onclick=backup;startClock();
  $('#q').oninput=e=>{q=e.target.value;pg=1;clearTimeout(qt);qt=setTimeout(load,300)};
  $('#fl').onclick=e=>{const s=e.target.dataset.s;if(!s)return;flt=s;pg=1;[...$('#fl').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));load()};
  $('#ls').onclick=e=>{const c=e.target.closest('.cd');if(c)openD(c.dataset.id)};
