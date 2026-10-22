@@ -5,7 +5,7 @@
  (같은 이름으로 덮어쓰면 이전 파일이 열리고, 같은 이름의 결과물이 여러 개 생겨 혼란스럽다는 사용자 요청이 있었습니다.)
    1. 버전 번호는 "v메이저.마이너" 형식입니다 (예: v2.01). 작은 수정과 부가 기능은 뒤 숫자만 올리고(v2.01 → v2.02),
       메인 기능이 바뀔 때만 앞 숫자를 올립니다(v2.05 → v3.00). (이전 표기 V20 = v2.00)
-   2. 파일 이름: index_v버전.html  (예: 현재 index_v2.01.html → 수정본은 index_v2.02.html)
+   2. 파일 이름: index_v버전.html  (예: 현재 index_v2.02.html → 수정본은 index_v2.03.html)
       GitHub에 올릴 때만 파일 이름을 index.html 로 바꿉니다.
    3. <title> 과 스크립트의 VER 값(화면 맨 위에 표시되는 버전)을 새 버전 번호로 올리세요.
    4. 아래 스크립트 영역의 "변경 이력"에 새 버전 한 줄을 추가하세요.
@@ -17,7 +17,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 v2.01</title>
+<title>물표 관리 v2.02</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -101,6 +101,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 /* V19 - 목록 위의 "1년 지난 자료" 경고 삭제 (백업 받기 버튼은 유지) */
 /* V20 - 배송 등록 화면 개편: 안내문 칸을 줄이고 기본 9개 항목을 함께 표시, 카톡 없이 직접 입력 가능, 접수번호 필수(공백·하이픈 제거 후 중복 확인), 품목명·차량번호·도착문의·연락처는 화면에서 빼고 안내문 붙여넣기 시 계속 저장 */
 /* v2.01 - 목록 화면 맨 위에 버전, 한국시간 실시간 시계(초 단위), DB·Storage 사용량 표시(80% 이상 주황, 90% 이상 빨강). 사용량은 Supabase의 get_usage 함수가 있어야 표시되고, 없으면 - 로 나옵니다 */
+/* v2.02 - 새 카톡 양식([제로데이택배 접수안내])도 읽도록 안내문 추출을 수정: 출발터미널, 도착터미널 도착예정시간, 도착터미널 문의, 도착터미널 연락처, 메모(차량번호) 항목 이름 인식, 값이 - 만 있으면 빈 값 처리, 버스회사 (주) 제거, 품목명 앞의 번호(1.) 제거. 항목 이름 뒤의 콜론(:)이 꼭 있어야 인식함 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -124,14 +125,37 @@ addEventListener('popstate',()=>{if(view==='form'||view==='m')home()});
 
 /* 카톡 안내문 자동 추출 */
 function parse(t){
- const K={receipt_no:'접수번호',sender:'발송인',recipient:'수취인',item_name:'품목명',departure_terminal:'발송터미널',departure_date:'출발일자',departure_time:'출발시간',arrival_terminal:'도착터미널',arrival_time:'도착예정시간',arrival_contact:'도착문의',contact:'연락처',vehicle_no:'차량번호'};
+ /* 항목 이름이 양식마다 달라서 여러 이름을 함께 인식합니다. (고속버스택배 양식, 제로데이택배 양식)
+    항목 이름 바로 뒤에 콜론(:)이 있는 줄만 읽습니다. 새 양식이 나오면 아래 이름 목록에 추가하세요. */
+ const K={
+  receipt_no:['접수번호'],
+  sender:['발송인'],
+  recipient:['수취인'],
+  item_name:['품목명'],
+  departure_terminal:['발송터미널','출발터미널'],
+  departure_date:['출발일자'],
+  departure_time:['출발시간'],
+  arrival_terminal:['도착터미널'],
+  arrival_time:['도착예정시간','도착터미널도착예정시간'],
+  arrival_contact:['도착문의','도착터미널문의'],
+  contact:['연락처','도착터미널연락처'],
+  vehicle_no:['차량번호','메모(차량번호)']
+ };
+ const rx=c=>c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
  const o={};
- for(const[k,w]of Object.entries(K)){
-  const re=new RegExp('^[ \\t\\-•·*]*'+[...w].join('[ \\t]*')+'[ \\t]*[:：]?[ \\t]*(.*)$','m');
-  o[k]=(t.match(re)?.[1]||'').trim();
+ for(const[k,names]of Object.entries(K)){
+  o[k]='';
+  for(const w of names){
+   const re=new RegExp('^[ \\t\\-•·*]*'+[...w].map(rx).join('[ \\t]*')+'[ \\t]*[:：][ \\t]*(.*)$','m');
+   const m=t.match(re);
+   if(m){o[k]=m[1].trim();break}
+  }
+  if(/^[-–—]+$/.test(o[k]))o[k]='';
  }
  o.receipt_no=o.receipt_no.replace(/\D/g,'');
- const bus=o.departure_time.match(/\(([^)]*)\)/);o.bus_company=bus?bus[1].trim():'';
+ o.item_name=o.item_name.replace(/^\d+\.\s*/,'');
+ const bus=o.departure_time.match(/\((.*)\)\s*$/);
+ o.bus_company=bus?bus[1].replace(/\(주\)|㈜|주식회사/g,'').trim():'';
  const hm=s=>{const m=s.match(/(\d{1,2})\s*(?:시|:)\s*(\d{1,2})?/);return m?m[1].padStart(2,'0')+':'+(m[2]||'00').padStart(2,'0'):s};
  o.departure_time=hm(o.departure_time);o.arrival_time=hm(o.arrival_time);
  const dm=o.departure_date.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
@@ -160,7 +184,7 @@ async function start(){
 
 /* 목록 */
 /* 헤더: 버전, 한국시간 시계, DB·Storage 사용량 (로그인 후 목록 화면에서만 보임. 사용량은 Supabase의 get_usage 함수가 필요하고, 없으면 - 로 표시) */
-const VER='v2.01';
+const VER='v2.02';
 const LIM_DB=500*1048576,LIM_ST=1073741824; /* 무료 플랜 한도. 플랜을 바꾸면 이 값과 아래 표시 글자도 바꾸세요 */
 const KST=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
 const kst=()=>{const o={};KST.formatToParts(new Date()).forEach(p=>{o[p.type]=p.value});return`${o.year}.${o.month}.${o.day}(${o.weekday}) ${o.hour}:${o.minute}:${o.second}`};
@@ -252,7 +276,7 @@ function newForm(){
   const V=[['sender','발송인'],['recipient','수취인'],['departure_terminal','발송터미널'],['arrival_terminal','도착터미널'],['departure_date','출발일자','date'],['departure_time','출발시간','time'],['bus_company','버스회사'],['arrival_time','도착예정시간','time']];
   let ex={};
   app.innerHTML=`<header><button class="bk" id="bk">‹</button><b>배송 등록</b></header>
- <div class="w reg"><label>카톡 안내문 붙여넣기 (없으면 비워 두고 아래에 직접 입력)<textarea id="raw" rows="2" placeholder="[고속버스택배 접수안내] 전체를 붙여넣으세요."></textarea></label>
+ <div class="w reg"><label>카톡 안내문 붙여넣기 (없으면 비워 두고 아래에 직접 입력)<textarea id="raw" rows="2" placeholder="카톡 접수안내 전체를 붙여넣으세요."></textarea></label>
  <div id="pv" class="m"></div>
  <div class="g2"><label><span class="rq">접수번호<b>필수</b></span><input name="receipt_no" inputmode="numeric" autocomplete="off"></label>
  <label><span class="rq">등록자<b>필수</b></span><select id="rb">${opts('','이름 선택')}</select></label>
