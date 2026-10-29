@@ -5,7 +5,7 @@
  (같은 이름으로 덮어쓰면 이전 파일이 열리고, 같은 이름의 결과물이 여러 개 생겨 혼란스럽다는 사용자 요청이 있었습니다.)
    1. 버전 번호는 "v메이저.마이너" 형식입니다 (예: v2.01). 작은 수정과 부가 기능은 뒤 숫자만 올리고(v2.01 → v2.02),
       메인 기능이 바뀔 때만 앞 숫자를 올립니다(v2.05 → v3.00). (이전 표기 V20 = v2.00)
-   2. 파일 이름: index_v버전.html  (예: 현재 index_v2.04.html → 수정본은 index_v2.05.html)
+   2. 파일 이름: index_v버전.html  (예: 현재 index_v2.05.html → 수정본은 index_v2.06.html)
       GitHub에 올릴 때만 파일 이름을 index.html 로 바꿉니다.
    3. <title> 과 스크립트의 VER 값(화면 맨 위에 표시되는 버전)을 새 버전 번호로 올리세요.
    4. 아래 스크립트 영역의 "변경 이력"에 새 버전 한 줄을 추가하세요.
@@ -17,7 +17,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#14213D">
-<title>물표 관리 v2.04</title>
+<title>물표 관리 v2.05</title>
 <style>
 :root{--ink:#14213D;--bg:#EEF1F4;--ln:#CFD7E1;--a:#B26A00;--b:#1650B8;--c:#1B7A4B;--mu:#5A6678}
 *{box-sizing:border-box}
@@ -74,6 +74,10 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 .sl.e{display:grid;place-items:center;min-height:0;padding:0;border:2px dashed var(--ln);font-size:24px;color:var(--mu);background:transparent}
 .x{position:absolute;top:2px;right:2px;min-height:24px;width:24px;padding:0;border-radius:99px;background:#000a;color:#fff;border:0;font-size:12px}
 .err{color:#B3261E;margin:0}
+#pk{position:fixed;inset:0;z-index:20;background:#0007;display:flex;align-items:flex-end;justify-content:center}
+#pk .bx{width:100%;max-width:640px;background:var(--bg);border-radius:14px 14px 0 0;padding:14px 12px calc(14px + env(safe-area-inset-bottom));display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#pk .bx button{min-height:56px;font-size:16px}
+#pk .bx .cn{grid-column:1/3;min-height:44px}
 #toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:9}
 #toast.on{opacity:1}
 .reg{gap:8px;padding:10px 12px}
@@ -107,7 +111,7 @@ header .s{color:#fff;border-color:#ffffff66;min-height:36px;padding:0 10px}
 /* v2.01 - 목록 화면 맨 위에 버전, 한국시간 실시간 시계(초 단위), DB·Storage 사용량 표시(80% 이상 주황, 90% 이상 빨강). 사용량은 Supabase의 get_usage 함수가 있어야 표시되고, 없으면 - 로 나옵니다 */
 /* v2.02 - 새 카톡 양식([제로데이택배 접수안내])도 읽도록 안내문 추출을 수정: 출발터미널, 도착터미널 도착예정시간, 도착터미널 문의, 도착터미널 연락처, 메모(차량번호) 항목 이름 인식, 값이 - 만 있으면 빈 값 처리, 버스회사 (주) 제거, 품목명 앞의 번호(1.) 제거. 항목 이름 뒤의 콜론(:)이 꼭 있어야 인식함 */
 /* v2.03 - 터미널 이름 뒤의 괄호 내용은 저장하지 않음(예: 광주(유·스퀘어) → 광주), 목록 카드에서 상태 배지가 글자가 긴 줄 때문에 세로로 찌그러지던 문제 수정 */
-/* v2.04 - 배송 상세 화면에 접수 정보 수정 기능 추가(정보 수정 버튼): 접수번호, 발송인, 수취인, 터미널, 출발일자·시간, 버스회사, 도착예정시간, 품목명, 도착문의, 연락처, 차량번호를 고칠 수 있음. 접수번호를 바꾸면 중복 확인함 */
+/* v2.04 - 배송 상세 화면에 접수 정보 수정 기능 추가(정보 수정 버튼): 접수번호, 발송인, 수취인, 터미널, 출발일자·시간, 버스회사, 도착예정시간, 품목명, 도착문의, 연락처, 차량번호를 고칠 수 있음. 접수번호를 바꾸면 중복 확인함 /* v2.05 - 사진 빈 칸(＋)을 누르면 📷 촬영 / 🖼 앨범 선택창이 뜸. 촬영은 카메라가 바로 열려 한 장씩 찍고, 앨범은 지금처럼 여러 장 선택 가능. 두 경우 모두 JPEG 변환·긴 변 1,600px 축소는 동일 */
 const SB_URL='https://jowlhidhtcsllqvcxmcf.supabase.co',
 SB_KEY='sb_publishable_PpNY5XJoOqhw_K0RzzoBWA_0ttqv80z',
 EMAIL='dragondha@naver.com';
@@ -191,7 +195,7 @@ async function start(){
 
 /* 목록 */
 /* 헤더: 버전, 한국시간 시계, DB·Storage 사용량 (로그인 후 목록 화면에서만 보임. 사용량은 Supabase의 get_usage 함수가 필요하고, 없으면 - 로 표시) */
-const VER='v2.04';
+const VER='v2.05';
 const LIM_DB=500*1048576,LIM_ST=1073741824; /* 무료 플랜 한도. 플랜을 바꾸면 이 값과 아래 표시 글자도 바꾸세요 */
 const KST=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
 const kst=()=>{const o={};KST.formatToParts(new Date()).forEach(p=>{o[p.type]=p.value});return`${o.year}.${o.month}.${o.day}(${o.weekday}) ${o.hour}:${o.minute}:${o.second}`};
@@ -345,7 +349,7 @@ function detail(d){
 <div class="g2"><label>수령예정자${rsel('eb',d.expected_receiver,d.expected_other)}</label><label>실제 수령자${rsel('rc',d.received_by,d.received_other)}</label></div>
 <label>수령예정시간<input id="ea" type="datetime-local" value="${loc(d.expected_at)}"></label>
 <label>기타사항<textarea id="nt" rows="2">${esc(d.note)}</textarea></label>
-<div class="m" id="pt"></div><div id="ph" class="ph"></div><input type="file" id="fi" accept="image/*" multiple hidden></div>
+<div class="m" id="pt"></div><div id="ph" class="ph"></div><input type="file" id="fi" accept="image/*" multiple hidden><input type="file" id="fc" accept="image/*" capture="environment" hidden></div>
 <div class="bar"><button class="p" id="sv">저장</button><button class="s dg" id="dl">삭제</button></div>`;
  back();photos(d);
  let editing=false;
@@ -429,12 +433,12 @@ async function photos(d){
  const ps=(data||[]).map(p=>p.file_path),U={};
  if(ps.length)((await sb.storage.from('photos').createSignedUrls(ps,3600)).data||[]).forEach(x=>U[x.path]=x.signedUrl);
  const el=$('#ph');if(!el)return;
- $('#pt').textContent=`사진 ${ps.length}/5 (빈 칸을 누르면 여러 장 선택 가능)`;
+ $('#pt').textContent=`사진 ${ps.length}/5 (빈 칸을 누르면 촬영 또는 앨범 선택)`;
  el.innerHTML=[1,2,3,4,5].map(s=>{const p=PH[s];return p
   ?`<div class="sl"><img src="${U[p.file_path]||''}" data-z="1" alt="사진 ${s}"><button class="x" data-x="${s}">✕</button></div>`
   :`<button class="sl e" data-add="1">＋</button>`}).join('');
  el.onclick=async e=>{
-  if(e.target.dataset.add)return $('#fi').click();
+  if(e.target.dataset.add)return pick();
   if(e.target.dataset.z)return window.open(e.target.src);
   const s=e.target.dataset.x;
   if(!s)return;
@@ -474,7 +478,13 @@ async function photos(d){
   toast('사진을 삭제했습니다.');
   photos(d);
  };
- $('#fi').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)upMany(d,fs)};
+ $('#fi').onchange=$('#fc').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length)upMany(d,fs)};
+ function pick(){
+  const o=document.createElement('div');o.id='pk';
+  o.innerHTML='<div class="bx"><button class="p" data-k="fc">📷 촬영</button><button class="s" data-k="fi">🖼 앨범</button><button class="s cn" data-k="">취소</button></div>';
+  o.onclick=ev=>{const k=ev.target.dataset.k;if(k===undefined&&ev.target!==o)return;o.remove();if(k)$('#'+k).click()};
+  document.body.appendChild(o);
+ }
 }
 async function shrink(f){
  const im=await createImageBitmap(f,{imageOrientation:'from-image'});
